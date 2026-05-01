@@ -8,6 +8,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+<script src="https://unpkg.com/@zxing/library@0.20.0/umd/index.min.js"></script>
 
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -531,67 +532,112 @@ function SummaryCard({ emoji, label, value, gradient }) {
 
 function BarcodeScanner({ onDetected, onClose }) {
   const videoRef = useRef(null);
+  const codeReaderRef = useRef(null);
   const streamRef = useRef(null);
+
   const [error, setError] = useState(null);
   const [scanning, setScanning] = useState(false);
+  const [manualBarcode, setManualBarcode] = useState("");
 
   useEffect(() => {
-    let detector;
-    let animFrame;
+    let cancelled = false;
 
     async function startScan() {
       try {
-        if (!("BarcodeDetector" in window)) {
-          setError("Barcode scanning is not supported on this browser. Try Chrome on Android or desktop Chrome.");
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+          setError("Camera scanning is not available in this browser. You can still type or paste the barcode below.");
           return;
         }
 
-        detector = new window.BarcodeDetector({
-          formats: ["ean_13", "ean_8", "upc_a", "upc_e", "code_128", "code_39"]
-        });
-
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: "environment" }
-        });
-
-        streamRef.current = stream;
-
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-          await videoRef.current.play();
-          setScanning(true);
-          detect();
+        if (!window.ZXing) {
+          setError("The scanner library did not load. Check your internet connection, then refresh the page.");
+          return;
         }
-      } catch {
-        setError("Camera access denied. Please allow camera permissions and try again.");
+
+        const codeReader = new ZXing.BrowserMultiFormatReader();
+        codeReaderRef.current = codeReader;
+
+        let selectedDeviceId = null;
+
+        try {
+          const devices = await codeReader.listVideoInputDevices();
+          const backCamera =
+            devices.find(d => /back|rear|environment/i.test(d.label || "")) ||
+            devices[devices.length - 1];
+
+          selectedDeviceId = backCamera ? backCamera.deviceId : null;
+        } catch {
+          selectedDeviceId = null;
+        }
+
+        if (cancelled) return;
+
+        setScanning(true);
+
+        await codeReader.decodeFromVideoDevice(
+          selectedDeviceId,
+          videoRef.current,
+          (result, err) => {
+            if (cancelled) return;
+
+            if (result) {
+              const text = result.getText();
+              stopScanner();
+              onDetected(text);
+            }
+          }
+        );
+      } catch (e) {
+        setScanning(false);
+
+        const message = String(e && e.message ? e.message : e);
+
+        if (message.toLowerCase().includes("permission")) {
+          setError("Camera permission was blocked. Tap the lock or AA icon in the address bar, allow camera access, then refresh.");
+        } else {
+          setError("Camera scanning could not start. You can still type or paste the barcode below.");
+        }
       }
     }
 
-    async function detect() {
-      if (!videoRef.current || !detector) return;
-
+    function stopScanner() {
       try {
-        const bc = await detector.detect(videoRef.current);
-        if (bc.length > 0) {
-          stop();
-          onDetected(bc[0].rawValue);
-          return;
+        if (codeReaderRef.current) {
+          codeReaderRef.current.reset();
         }
       } catch {}
 
-      animFrame = requestAnimationFrame(detect);
-    }
-
-    function stop() {
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach(t => t.stop());
-      }
-      if (animFrame) cancelAnimationFrame(animFrame);
+      try {
+        if (streamRef.current) {
+          streamRef.current.getTracks().forEach(t => t.stop());
+        }
+      } catch {}
     }
 
     startScan();
-    return () => stop();
+
+    return () => {
+      cancelled = true;
+      stopScanner();
+    };
   }, []);
+
+  function submitManualBarcode() {
+    const cleaned = manualBarcode.replace(/\D/g, "");
+
+    if (!cleaned) {
+      alert("Please enter or paste the barcode number.");
+      return;
+    }
+
+    try {
+      if (codeReaderRef.current) {
+        codeReaderRef.current.reset();
+      }
+    } catch {}
+
+    onDetected(cleaned);
+  }
 
   return (
     <div style={{
@@ -609,7 +655,7 @@ function BarcodeScanner({ onDetected, onClose }) {
         borderRadius: 22,
         overflow: "hidden",
         width: "100%",
-        maxWidth: 420,
+        maxWidth: 430,
         boxShadow: "0 12px 40px rgba(0,0,0,0.35)",
         border: "1px solid rgba(255,255,255,0.7)"
       }}>
@@ -621,6 +667,7 @@ function BarcodeScanner({ onDetected, onClose }) {
           alignItems: "center"
         }}>
           <span style={{color: "#ffffff", fontWeight: 800, fontSize: 15}}>📷 Scan Barcode</span>
+
           <button
             onClick={onClose}
             style={{
@@ -638,65 +685,109 @@ function BarcodeScanner({ onDetected, onClose }) {
           </button>
         </div>
 
-        {error ? (
-          <div style={{padding: 24, textAlign: "center"}}>
-            <div style={{fontSize: 34, marginBottom: 12}}>⚠️</div>
-            <p style={{color: "#374151", fontSize: 13, lineHeight: 1.5}}>{error}</p>
-            <button onClick={onClose} style={{...S.btnPrimary, marginTop: 14}}>Go Back</button>
-          </div>
-        ) : (
-          <div style={{position: "relative", background: "#000"}}>
-            <video
-              ref={videoRef}
-              style={{width: "100%", display: "block", maxHeight: 300, objectFit: "cover"}}
-              muted
-              playsInline
-            />
-            {scanning && (
+        <div style={{position: "relative", background: "#000"}}>
+          <video
+            ref={videoRef}
+            style={{
+              width: "100%",
+              display: "block",
+              maxHeight: 320,
+              minHeight: 220,
+              objectFit: "cover",
+              background: "#111827"
+            }}
+            muted
+            playsInline
+          />
+
+          {scanning && (
+            <div style={{
+              position: "absolute",
+              inset: 0,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              pointerEvents: "none"
+            }}>
               <div style={{
-                position: "absolute",
-                inset: 0,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                pointerEvents: "none"
-              }}>
-                <div style={{
-                  width: "65%",
-                  height: 3,
-                  background: "#f9a8d4",
-                  boxShadow: "0 0 10px #f9a8d4",
-                  borderRadius: 999
-                }} />
-              </div>
-            )}
-            {!scanning && !error && (
-              <div style={{
-                position: "absolute",
-                inset: 0,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                background: "rgba(0,0,0,0.5)"
-              }}>
-                <span style={{color: "#fff", fontSize: 13}}>Starting camera…</span>
-              </div>
-            )}
+                width: "72%",
+                height: 3,
+                background: "#f9a8d4",
+                boxShadow: "0 0 12px #f9a8d4",
+                borderRadius: 999
+              }} />
+            </div>
+          )}
+
+          {!scanning && !error && (
+            <div style={{
+              position: "absolute",
+              inset: 0,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              background: "rgba(0,0,0,0.45)"
+            }}>
+              <span style={{color: "#fff", fontSize: 13, fontWeight: 700}}>Starting camera…</span>
+            </div>
+          )}
+        </div>
+
+        {error && (
+          <div style={{
+            background: "#fef2f2",
+            color: "#991b1b",
+            borderTop: "1px solid #fecaca",
+            padding: "10px 14px",
+            fontSize: 12,
+            lineHeight: 1.4,
+            fontWeight: 700
+          }}>
+            ⚠️ {error}
           </div>
         )}
 
-        {!error && (
+        <div style={{
+          padding: 14,
+          background: "#f8fafc",
+          borderTop: "1px solid #e5e7eb"
+        }}>
           <p style={{
-            margin: 0,
-            padding: "11px 16px",
+            margin: "0 0 10px",
             fontSize: 12,
             color: "#6b7280",
             textAlign: "center",
-            background: "#f8fafc"
+            lineHeight: 1.4
           }}>
-            Point your camera at the barcode on the package
+            Hold the barcode steady in good lighting. If it does not scan, type or paste the number below.
           </p>
-        )}
+
+          <div style={{display: "flex", gap: 8}}>
+            <input
+              value={manualBarcode}
+              onChange={e => setManualBarcode(e.target.value)}
+              inputMode="numeric"
+              placeholder="Enter barcode number"
+              style={{
+                ...S.input,
+                background: "#ffffff",
+                border: "1.5px solid #dbeafe",
+                flex: 1
+              }}
+            />
+
+            <button
+              onClick={submitManualBarcode}
+              style={{
+                ...S.btnPrimary,
+                padding: "10px 14px",
+                whiteSpace: "nowrap"
+              }}
+            >
+              Use
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );
