@@ -1,0 +1,19 @@
+{
+  "name": "StockSmart Home Inventory",
+  "short_name": "StockSmart",
+  "description": "Track fridge, freezer, pantry, household supplies, shopping list, use-first alerts, item images, and meal ideas.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f7f9ff",
+  "theme_color": "#3cc6b7",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "icon.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
