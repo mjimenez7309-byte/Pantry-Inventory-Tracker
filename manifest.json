@@ -1,0 +1,19 @@
+{
+  "name": "Home Inventory Pantry Tracker",
+  "short_name": "Pantry",
+  "description": "Pantry tracker with grouped inventory, shopping list, barcode fallback, meal ideas, expiration alerts, backup, restore, and offline support.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f5f3ff",
+  "theme_color": "#c084fc",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

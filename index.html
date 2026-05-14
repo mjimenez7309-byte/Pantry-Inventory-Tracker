@@ -4,1611 +4,290 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>🥗 Home Inventory</title>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#c084fc">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Pantry">
+<link rel="apple-touch-icon" href="icon.svg">
 <script src="https://unpkg.com/@zxing/library@0.20.0/umd/index.min.js"></script>
-
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Georgia,serif;min-height:100vh;color:#374151;background:radial-gradient(circle at top left,#fce7f3 0,transparent 28%),radial-gradient(circle at top right,#dbeafe 0,transparent 30%),radial-gradient(circle at bottom left,#fef3c7 0,transparent 28%),linear-gradient(135deg,#fff7ed 0%,#f5f3ff 45%,#ecfdf5 100%)}
+button,input,select{font-family:Georgia,serif}
+button{cursor:pointer;transition:.15s}
+button:active{transform:scale(.98);opacity:.88}
+input:focus,select:focus{border-color:#c084fc!important;box-shadow:0 0 0 3px rgba(216,180,254,.35);background:#fff!important;outline:none}
+.header{background:linear-gradient(135deg,#c084fc 0%,#93c5fd 38%,#86efac 75%,#fde68a 100%);padding:28px 24px 20px;position:sticky;top:0;z-index:10;box-shadow:0 6px 24px rgba(147,197,253,.35);border-bottom:1px solid rgba(255,255,255,.55)}
+.header-inner,.wrap{max-width:920px;margin:0 auto}
+.wrap{padding:20px 16px 60px}
+h1{color:#fff;font-size:28px;font-weight:800;letter-spacing:-.5px;text-shadow:0 2px 8px rgba(0,0,0,.15)}
+.sub{color:#fff;margin-top:5px;font-size:13px;font-weight:700;text-shadow:0 1px 5px rgba(0,0,0,.12)}
+.badge{display:inline-block;border-radius:999px;padding:3px 9px;font-size:11px;font-weight:800;white-space:nowrap}
+.card{background:rgba(255,255,255,.92);border-radius:20px;padding:16px;box-shadow:0 8px 24px rgba(129,140,248,.14);border:1.5px solid rgba(216,180,254,.45);margin-bottom:14px;backdrop-filter:blur(8px)}
+.summary-grid{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+.summary{flex:1;min-width:140px;border-radius:18px;padding:14px 15px;box-shadow:0 8px 18px rgba(148,163,184,.16);border:1px solid rgba(255,255,255,.65)}
+.summary-emoji{font-size:22px;margin-bottom:6px}
+.summary-label{font-size:11px;font-weight:700;color:rgba(55,65,81,.75);text-transform:uppercase;letter-spacing:.5px}
+.summary-value{font-size:22px;font-weight:800;color:#374151;margin-top:2px}
+.tabs{display:flex;gap:10px;margin-bottom:16px}
+.tab{flex:1;border:1.5px solid #e9d5ff;border-radius:16px;padding:12px 14px;font-weight:800;font-size:14px;background:rgba(255,255,255,.82);color:#6b21a8}
+.tab.active.inventory{background:linear-gradient(135deg,#c084fc,#f9a8d4);color:#fff}
+.tab.active.shopping{background:linear-gradient(135deg,#60a5fa,#86efac);color:#fff;border-color:#dbeafe}
+.controls{display:flex;flex-direction:column;gap:12px}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.field{flex:1;min-width:120px}
+label{display:block;font-size:11px;font-weight:700;color:#6b21a8;margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px}
+input,select{width:100%;padding:10px 13px;border-radius:12px;border:1.5px solid #e9d5ff;font-size:13px;background:#fffafe;color:#374151}
+.btn{border:none;border-radius:14px;padding:12px 16px;font-weight:800;font-size:14px}
+.btn-primary{background:linear-gradient(135deg,#c084fc,#f9a8d4);color:#fff;box-shadow:0 6px 14px rgba(192,132,252,.32)}
+.btn-blue{background:linear-gradient(135deg,#60a5fa,#a78bfa);color:#fff}
+.btn-orange{background:linear-gradient(135deg,#fcd34d,#fb923c);color:#7c2d12}
+.btn-green{background:linear-gradient(135deg,#86efac,#67e8f9);color:#14532d}
+.btn-secondary{background:#f8fafc;color:#475569;border:1.5px solid #dbeafe;border-radius:14px;padding:10px 18px;font-weight:800;font-size:13px}
+.btn-shop{background:#fff7ed;color:#9a3412;border:1.5px solid #fed7aa;border-radius:14px;padding:10px 18px;font-weight:800;font-size:13px}
+.icon-btn{background:#fff;border:1.5px solid #e9d5ff;border-radius:12px;padding:7px 10px;font-size:15px;box-shadow:0 3px 10px rgba(148,163,184,.16)}
+.group{border-left:6px solid #86efac}
+.group-title{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.group-name{font-weight:800;font-size:16px;color:#4c1d95}
+.tag{background:#dcfce7;color:#166534;padding:3px 9px;border-radius:999px;font-size:11px;font-weight:800;display:inline-block}
+.entry{background:rgba(248,250,252,.9);border:1px solid #e5e7eb;border-radius:14px;padding:11px;margin-top:8px}
+.entry-top{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.muted{font-size:11px;color:#6b7280;margin-top:5px}
+.notes{font-size:12px;color:#6b7280;margin-top:5px;font-style:italic;line-height:1.35}
+.actions{display:flex;gap:7px;flex-shrink:0}
+.hidden{display:none!important}
+.empty{text-align:center;color:#6b7280;padding:40px;background:rgba(255,255,255,.65);border-radius:20px;border:1.5px dashed #d8b4fe}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:11px 16px}
+.full{grid-column:1/-1}
+.modal{position:fixed;inset:0;background:rgba(30,27,75,.82);z-index:100;display:flex;align-items:center;justify-content:center;padding:20px}
+.modal-box{background:#fff;border-radius:22px;overflow:hidden;width:100%;max-width:430px;box-shadow:0 12px 40px rgba(0,0,0,.35)}
+video{width:100%;display:block;min-height:220px;max-height:320px;object-fit:cover;background:#111827}
+@media(max-width:620px){.top-actions{flex-direction:column}.form-grid{grid-template-columns:1fr}.actions{width:100%;justify-content:flex-end}}
 
-  body {
-    font-family: Georgia, serif;
-    background:
-      radial-gradient(circle at top left, #fce7f3 0, transparent 28%),
-      radial-gradient(circle at top right, #dbeafe 0, transparent 30%),
-      radial-gradient(circle at bottom left, #fef3c7 0, transparent 28%),
-      linear-gradient(135deg, #fff7ed 0%, #f5f3ff 45%, #ecfdf5 100%);
-    min-height: 100vh;
-    color: #374151;
-  }
-
-  button {
-    transition: all 0.15s ease;
-  }
-
-  button:active {
-    transform: scale(0.98);
-    opacity: 0.88;
-  }
-
-  input, select, textarea {
-    transition: border 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
-  }
-
-  input:focus, select:focus, textarea:focus {
-    border-color: #c084fc !important;
-    box-shadow: 0 0 0 3px rgba(216, 180, 254, 0.35);
-    background: #ffffff !important;
-  }
-
-  @media (max-width: 560px) {
-    .top-actions {
-      flex-direction: column;
-    }
-
-    .item-actions {
-      width: 100%;
-      justify-content: flex-end;
-    }
-  }
+.upgrade-box{background:rgba(255,255,255,.92);border-radius:20px;padding:16px;box-shadow:0 8px 24px rgba(129,140,248,.14);border:1.5px solid rgba(216,180,254,.45);margin-bottom:14px}
+.upgrade-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-top:12px}
+.upgrade-card{background:rgba(248,250,252,.9);border:1px solid #e5e7eb;border-radius:14px;padding:11px}
+.upgrade-title{font-weight:800;color:#4c1d95;font-size:14px}
+.upgrade-meta{font-size:12px;color:#6b7280;margin-top:4px;line-height:1.35}
 </style>
 </head>
-
 <body>
-<div id="root"></div>
-
-<script type="text/babel">
-const { useState, useEffect, useRef } = React;
-
-/*
-  IMPORTANT:
-  Your inventory saves to this browser under STORAGE_KEY.
-  Because this uses the same key from your current app, your existing saved inventory should load automatically
-  on the same device/browser.
-
-  If you are opening this on a new browser/device and want the original starter inventory to appear,
-  paste your full item list inside INITIAL_ITEMS below.
-*/
-const INITIAL_ITEMS = [
-{ id: 1, name: "Stonyfield Organic Yogurt Pouch - Strawberry Banana", category: "Dairy", location: "Fridge", quantity: 1, expDate: "2026-05-08", opened: false, notes: "Kids' pouch" },
-{ id: 2, name: "Stonyfield Organic Yogurt Pouch - Blueberry", category: "Dairy", location: "Fridge", quantity: 2, expDate: "2026-05-06", opened: false, notes: "Kids' pouch" },
-{ id: 3, name: "Stonyfield Organic Yogurt Pouch - Pear Spinach Mango", category: "Dairy", location: "Fridge", quantity: 1, expDate: "2026-05-10", opened: false, notes: "Kids' pouch" },
-{ id: 4, name: "Stonyfield Organic Yogurt Cups - Blueberry & Strawberry Vanilla", category: "Dairy", location: "Fridge", quantity: 1, expDate: "2026-05-06", opened: false, notes: "Multipack cups" },
-{ id: 5, name: "Stonyfield Organic Drinkable Yogurt - Strawberry Banana", category: "Dairy", location: "Fridge", quantity: 5, expDate: "2026-04-27", opened: false, notes: "Drinkable bottles" },
-{ id: 6, name: "Simply Nature Organic Greek Yogurt - Vanilla Bean", category: "Dairy", location: "Fridge", quantity: 1, expDate: "2026-04-30", opened: true, notes: "32 oz tub" },
-{ id: 7, name: "Cabot Creamery Triple Cream Greek Yogurt - Vanilla Bean", category: "Dairy", location: "Fridge", quantity: 1, expDate: "2026-05-10", opened: false, notes: "32 oz tub" },
-{ id: 8, name: "Chobani Flip Greek Yogurt - Peanut Butter Cup", category: "Dairy", location: "Fridge", quantity: 1, expDate: "2026-05-31", opened: false, notes: "4.5 oz flip cup" },
-{ id: 9, name: "Happy Farms Sharp Cheddar Block (Aldi)", category: "Dairy", location: "Fridge", quantity: 1, expDate: "2026-06-21", opened: false, notes: "8 oz block" },
-{ id: 10, name: "Bowl & Basket Extra Sharp Cheddar Block", category: "Dairy", location: "Fridge", quantity: 1, expDate: "2026-07-21", opened: false, notes: "8 oz block" },
-{ id: 11, name: "Frigo CheeseHeads String Cheese - Unopened 48-Pack", category: "Dairy", location: "Fridge", quantity: 1, expDate: "2026-08-02", opened: false, notes: "Full sealed bag, 48 count" },
-{ id: 12, name: "Frigo CheeseHeads String Cheese - Individual Sticks", category: "Dairy", location: "Fridge", quantity: 7, expDate: "2026-07-03", opened: true, notes: "From open bag" },
-{ id: 13, name: "Frigo CheeseHeads String Cheese - Individual Sticks", category: "Dairy", location: "Fridge", quantity: 2, expDate: "2026-05-08", opened: true, notes: "From open bag, use soon" },
-{ id: 14, name: "Great Value Finely Shredded Mozzarella", category: "Dairy", location: "Fridge", quantity: 1, expDate: "2026-08-19", opened: false, notes: "1 lb bag, 4 cups" },
-{ id: 15, name: "Claussen Kosher Dill Spears", category: "Other", location: "Fridge", quantity: 1, expDate: "2026-05-24", opened: true, notes: "64 oz jar" },
-{ id: 16, name: "Ortega Original Taco Sauce - Medium", category: "Other", location: "Fridge", quantity: 1, expDate: "2028-07-28", opened: true, notes: "8 oz bottle" },
-{ id: 17, name: "Ortega Original Taco Sauce - Mild", category: "Other", location: "Fridge", quantity: 1, expDate: "2027-10-14", opened: true, notes: "8 oz bottle" },
-{ id: 18, name: "Burman's Dijon Mustard", category: "Other", location: "Fridge", quantity: 1, expDate: "2026-12-03", opened: true, notes: "Aldi brand, squeeze bottle" },
-{ id: 19, name: "Sweet Baby Ray's Original BBQ Sauce", category: "Other", location: "Fridge", quantity: 1, expDate: "2026-11-11", opened: true, notes: "Large bottle" },
-{ id: 20, name: "Hellmann's Mayonnaise", category: "Other", location: "Fridge", quantity: 1, expDate: "2026-05-06", opened: true, notes: "Large jar, well used" },
-{ id: 21, name: "Reggano Grated Parmesan & Romano Cheese", category: "Dairy", location: "Fridge", quantity: 1, expDate: "2026-11-21", opened: true, notes: "8 oz shaker canister" },
-{ id: 22, name: "Goya Sofrito Tomato Cooking Base", category: "Other", location: "Fridge", quantity: 1, expDate: "2029-10-31", opened: true, notes: "12 oz jar" },
-{ id: 23, name: "Polaner All Fruit Spreadable Fruit - Peach", category: "Other", location: "Fridge", quantity: 1, expDate: "2026-10-01", opened: false, notes: "10 oz jar" },
-{ id: 24, name: "Tuscan Garden Sun-Dried Tomatoes Julienne Cut", category: "Other", location: "Fridge", quantity: 1, expDate: "2028-04-30", opened: true, notes: "8 oz jar, with oil and herbs" },
-{ id: 25, name: "Burman's Chicken Dipping Sauce", category: "Other", location: "Fridge", quantity: 1, expDate: "2027-01-23", opened: true, notes: "16 oz bottle, Aldi brand" },
-{ id: 26, name: "Burman's Parmesan Garlic Wing Sauce", category: "Other", location: "Fridge", quantity: 1, expDate: "2026-06-05", opened: true, notes: "12 oz bottle" },
-{ id: 27, name: "Tuscan Garden Chunky Blue Cheese Dressing", category: "Other", location: "Fridge", quantity: 1, expDate: "2026-07-01", opened: true, notes: "Aldi brand" },
-{ id: 28, name: "Sweet Baby Ray's Sweet 'N Spicy BBQ Sauce", category: "Other", location: "Fridge", quantity: 1, expDate: "2026-10-14", opened: true, notes: "Smaller bottle" },
-{ id: 29, name: "Hunt's Ketchup", category: "Other", location: "Fridge", quantity: 1, expDate: "2027-07-22", opened: true, notes: "Squeeze bottle" },
-{ id: 30, name: "Daisy Sour Cream", category: "Dairy", location: "Fridge", quantity: 1, expDate: "2026-06-23", opened: true, notes: "Large tub" },
-{ id: 31, name: "Polaner All Fruit Spreadable Fruit - Concord Grape", category: "Other", location: "Fridge", quantity: 1, expDate: "2027-10-28", opened: false, notes: "10 oz jar" },
-{ id: 32, name: "A.1. Original Steak Sauce", category: "Other", location: "Fridge", quantity: 1, expDate: "2028-08-03", opened: true, notes: "15 oz bottle" },
-{ id: 33, name: "Tuscan Garden Buttermilk Ranch Dressing", category: "Other", location: "Fridge", quantity: 1, expDate: "2026-10-04", opened: true, notes: "Aldi brand" },
-{ id: 34, name: "Stonemill Minced Garlic in Extra Virgin Olive Oil", category: "Other", location: "Fridge", quantity: 1, expDate: "2027-02-12", opened: true, notes: "7 oz jar, Aldi brand" },
-{ id: 35, name: "Great Value Pure Maple Syrup", category: "Other", location: "Fridge", quantity: 1, expDate: "2027-09-02", opened: true, notes: "8 fl oz, refrigerate after opening" },
-{ id: 36, name: "Bowl & Basket Spanish Stuffed Olives with Minced Pimiento", category: "Other", location: "Fridge", quantity: 1, expDate: "2028-11-07", opened: true, notes: "21 oz jar, ShopRite brand" },
-{ id: 37, name: "Land O'Lakes Butter with Canola Oil Spread", category: "Dairy", location: "Fridge", quantity: 1, expDate: "2026-06-08", opened: true, notes: "Soft spread tub, opened" },
-{ id: 38, name: "Philadelphia Strawberry Cream Cheese Spread", category: "Dairy", location: "Fridge", quantity: 1, expDate: "2026-06-08", opened: true, notes: "Tub" },
-{ id: 39, name: "Bowl & Basket Sweet Cream Salted Butter", category: "Dairy", location: "Fridge", quantity: 1, expDate: "2026-06-11", opened: false, notes: "1 lb box, 4 quarters, unopened" },
-{ id: 40, name: "Great Value Mixed Vegetables", category: "Frozen", location: "Freezer", quantity: 1, expDate: "2028-03-11", opened: false, notes: "12 oz bag" },
-{ id: 41, name: "Birds Eye Super Sweet Gold & White Corn", category: "Frozen", location: "Freezer", quantity: 2, expDate: "2028-02-10", opened: false, notes: "Steamfresh bags" },
-{ id: 42, name: "Birds Eye Broccoli, Carrots, Sugar Snap Peas & Water Chestnuts", category: "Frozen", location: "Freezer", quantity: 1, expDate: "2028-03-03", opened: false, notes: "Steamfresh bag" },
-{ id: 43, name: "Birds Eye Sweet Peas", category: "Frozen", location: "Freezer", quantity: 1, expDate: "2028-02-09", opened: false, notes: "Steamfresh bag" },
-{ id: 44, name: "Bowl & Basket Cauliflower Florets", category: "Frozen", location: "Freezer", quantity: 1, expDate: "2027-03-31", opened: false, notes: "Steam-in-bag" },
-{ id: 45, name: "Frozen Chicken Breast (home portioned)", category: "Meat", location: "Freezer", quantity: 4, expDate: "2026-11-01", opened: false, notes: "Ziploc freezer bags, ~20 oz each, frozen approx Feb 2026. Best quality by Nov 2026." },
-{ id: 46, name: "Ground Beef 80/20", category: "Meat", location: "Freezer", quantity: 1, expDate: "2026-08-17", opened: false, notes: "1 lb, store packaging, frozen from 4/17/26. Best quality by Aug 2026." },
-{ id: 47, name: "Bone-In Pork Chops (home portioned)", category: "Meat", location: "Freezer", quantity: 1, expDate: "2026-10-16", opened: false, notes: "Ziploc freezer bag, quantity unknown, freeze date unknown. Est. best by Oct 2026." },
-{ id: 48, name: "Bowl & Basket Sliced Strawberries", category: "Frozen", location: "Freezer", quantity: 1, expDate: "2027-09-25", opened: true, notes: "1 lb bag, ShopRite brand" },
-{ id: 49, name: "Great Value Sliced Strawberries", category: "Frozen", location: "Freezer", quantity: 1, expDate: "2027-11-18", opened: false, notes: "4 lb bag" },
-{ id: 50, name: "Season's Choice Frozen Blueberries", category: "Frozen", location: "Freezer", quantity: 1, expDate: "2027-02-15", opened: true, notes: "Aldi brand, good for smoothies" },
-{ id: 51, name: "Member's Mark Mixed Fruit", category: "Frozen", location: "Freezer", quantity: 2, expDate: "2027-12-23", opened: true, notes: "1 lb pre-portioned bags, pineapple/strawberries/peaches/mangos. 1 of 2 opened." },
-{ id: 52, name: "Eggo Minis Chocolatey Chip Pancakes", category: "Frozen", location: "Freezer", quantity: 9, expDate: "2027-06-08", opened: false, notes: "Individual 1.69 oz heat & go pouches" },
-{ id: 53, name: "Eggo Mini Pancakes - Plain (repackaged)", category: "Frozen", location: "Freezer", quantity: 1, expDate: "2026-10-01", opened: true, notes: "Ziploc bag, repackaged from Eggo box, purchased approx Apr 2026" },
-{ id: 54, name: "Eggo Mini Cinnamon Waffles (repackaged)", category: "Frozen", location: "Freezer", quantity: 1, expDate: "2026-10-01", opened: true, notes: "Ziploc bag with 2 packs of 4, repackaged from Eggo box, purchased approx Apr 2026" },
-{ id: 55, name: "Aldi Specially Selected Stuffed Belgian Waffles", category: "Frozen", location: "Freezer", quantity: 2, expDate: "2026-10-01", opened: false, notes: "Individually wrapped, no exp date visible, purchased approx Apr 2026" },
-{ id: 56, name: "Tyson White Meat Chicken Nuggets", category: "Frozen", location: "Freezer", quantity: 1, expDate: "2027-02-02", opened: true, notes: "5 lb resealable bag, partially used" },
-{ id: 57, name: "Popsicle Tropicals Sugar Free Ice Pops", category: "Frozen", location: "Freezer", quantity: 1, expDate: "2027-04-01", opened: true, notes: "18 ct box, Caribbean Fruit Punch, Tropical Orange, Hawaiian Pineapple" },
-{ id: 58, name: "Bowl & Basket Italian Style Meatballs", category: "Frozen", location: "Freezer", quantity: 1, expDate: "2027-04-24", opened: false, notes: "26 oz bag, fully cooked, ShopRite brand" },
-{ id: 59, name: "Bowl & Basket Cheese Ravioli", category: "Frozen", location: "Freezer", quantity: 1, expDate: "2028-01-23", opened: false, notes: "25 oz bag, filled with ricotta & romano cheeses, ShopRite brand" },
-{ id: 60, name: "Simply Nature Sweet Potato Bites", category: "Frozen", location: "Freezer", quantity: 1, expDate: "2028-01-22", opened: true, notes: "Aldi brand, Non-GMO" },
-{ id: 61, name: "Ellio's Five Cheese Pizza", category: "Frozen", location: "Freezer", quantity: 1, expDate: "2026-10-19", opened: true, notes: "1 slice remaining" },
-{ id: 62, name: "Drumstick Mini Drums Vanilla Ice Cream Cones", category: "Frozen", location: "Freezer", quantity: 1, expDate: "2026-11-30", opened: true, notes: "20 ct box, approx 12 remaining" },
-{ id: 63, name: "Tyson Chicken Patties (repackaged)", category: "Frozen", location: "Freezer", quantity: 1, expDate: "2026-10-01", opened: true, notes: "6 patties remaining in Ziploc, removed from original packaging, est. best by Oct 2026" },
-{ id: 64, name: "Blue Diamond Almond Breeze Hint of Honey Vanilla", category: "Beverages", location: "Fridge", quantity: 1, expDate: "2026-06-11", opened: true, notes: "Half gallon carton" },
-{ id: 65, name: "Lactaid Whole Milk Lactose Free", category: "Dairy", location: "Fridge", quantity: 1, expDate: "2026-06-19", opened: true, notes: "96 fl oz jug" },
-{ id: 66, name: "Great Value 100% Pineapple Juice", category: "Beverages", location: "Fridge", quantity: 1, expDate: "2026-11-10", opened: true, notes: "Large bottle" },
-{ id: 67, name: "Ocean Spray White Cran x Peach", category: "Beverages", location: "Fridge", quantity: 1, expDate: "2026-09-03", opened: true, notes: "64 fl oz bottle" },
-{ id: 68, name: "Kendakids Velvety Vanilla Whole Milk Drink", category: "Beverages", location: "Fridge", quantity: 6, expDate: "2027-01-09", opened: false, notes: "8 fl oz cartons, made with European whole milk, DHA Omega-3" },
-{ id: 69, name: "Eggs (loose)", category: "Dairy", location: "Fridge", quantity: 25, expDate: "2026-05-20", opened: true, notes: "Purchased 4/19/26, removed from 60-count box. Est. best by May 20, 2026." },
-{ id: 70, name: "Happy Harvest Fire Roasted Diced Tomatoes", category: "Pantry", location: "Pantry", quantity: 1, expDate: "2027-09-01", opened: false, notes: "14.5 oz can, Aldi brand" },
-{ id: 71, name: "Hunt's Fire Roasted Diced Tomatoes", category: "Pantry", location: "Pantry", quantity: 1, expDate: "2026-09-11", opened: false, notes: "14.5 oz can" },
-{ id: 72, name: "Tuttorosso Crushed Tomatoes with Basil", category: "Pantry", location: "Pantry", quantity: 2, expDate: "2027-08-15", opened: false, notes: "28 oz cans" },
-{ id: 73, name: "Tuttorosso Tomato Paste with Roasted Garlic", category: "Pantry", location: "Pantry", quantity: 1, expDate: "2027-05-28", opened: false, notes: "6 oz can" },
-{ id: 74, name: "Happy Harvest Tomato Paste", category: "Pantry", location: "Pantry", quantity: 1, expDate: "2027-09-11", opened: false, notes: "6 oz can, Aldi brand" },
-{ id: 75, name: "Goya Tomato Sauce - Spanish Style", category: "Pantry", location: "Pantry", quantity: 5, expDate: "2028-11-21", opened: false, notes: "8 oz cans, qty 5" },
-{ id: 76, name: "Hunt's Tomato Sauce", category: "Pantry", location: "Pantry", quantity: 1, expDate: "2026-08-03", opened: false, notes: "29 oz can" },
-{ id: 77, name: "Tuttorosso Tomato Sauce", category: "Pantry", location: "Pantry", quantity: 1, expDate: "2027-11-28", opened: false, notes: "28 oz can" },
-{ id: 78, name: "Happy Harvest Tomato Sauce", category: "Pantry", location: "Pantry", quantity: 2, expDate: "2026-10-29", opened: false, notes: "8 oz cans, Aldi brand" },
-{ id: 79, name: "Classico Four Cheese Alfredo Pasta Sauce", category: "Pantry", location: "Pantry", quantity: 2, expDate: "2027-06-11", opened: false, notes: "15 oz jars" },
-{ id: 80, name: "Bertolli Vodka Sauce", category: "Pantry", location: "Pantry", quantity: 2, expDate: "2028-03-13", opened: false, notes: "24 oz jars" },
-{ id: 81, name: "Progresso Traditional Chicken Noodle Soup", category: "Pantry", location: "Pantry", quantity: 3, expDate: "2026-06-19", opened: false, notes: "18.5 oz cans" },
-{ id: 82, name: "Progresso Vegetable Classics Green Split Pea with Bacon", category: "Pantry", location: "Pantry", quantity: 2, expDate: "2027-08-25", opened: false, notes: "18.5 oz cans" },
-{ id: 83, name: "Progresso Light Chicken Noodle Soup", category: "Pantry", location: "Pantry", quantity: 3, expDate: "2026-02-15", opened: false, notes: "18.5 oz cans" },
-{ id: 84, name: "Progresso Traditional Broccoli Cheese Soup", category: "Pantry", location: "Pantry", quantity: 1, expDate: "2027-08-23", opened: false, notes: "18.5 oz can" },
-{ id: 85, name: "Campbell's Chunky Pub-Style Chicken Pot Pie", category: "Pantry", location: "Pantry", quantity: 2, expDate: "2027-07-08", opened: false, notes: "18.8 oz cans" },
-{ id: 86, name: "Campbell's Chunky Creamy Chicken & Dumplings", category: "Pantry", location: "Pantry", quantity: 1, expDate: "2027-07-08", opened: false, notes: "18.8 oz can" },
-{ id: 87, name: "Goya Coconut Milk", category: "Pantry", location: "Pantry", quantity: 2, expDate: "2028-09-16", opened: false, notes: "13.5 oz cans" },
-{ id: 88, name: "Jamaican Choice Coconut Milk", category: "Pantry", location: "Pantry", quantity: 1, expDate: "2028-08-01", opened: false, notes: "13.5 oz can" },
-{ id: 89, name: "Campbell's SpaghettiOs Original", category: "Pantry", location: "Pantry", quantity: 1, expDate: "2027-07-08", opened: false, notes: "15.8 oz can" },
-{ id: 90, name: "Campbell's SpaghettiOs Original A to Z's", category: "Pantry", location: "Pantry", quantity: 3, expDate: "2027-02-25", opened: false, notes: "15.8 oz cans" },
-{ id: 91, name: "Libby's Vienna Sausage", category: "Pantry", location: "Pantry", quantity: 2, expDate: "2028-01-22", opened: false, notes: "4.6 oz cans" },
-{ id: 92, name: "Great Value Evaporated Milk", category: "Pantry", location: "Pantry", quantity: 3, expDate: "2026-07-09", opened: false, notes: "12 oz cans" },
-{ id: 93, name: "Bowl & Basket Distilled White Vinegar", category: "Pantry", location: "Pantry", quantity: 1, expDate: "2026-08-27", opened: false, notes: "ShopRite brand" },
-{ id: 94, name: "Great Value Distilled White Vinegar", category: "Pantry", location: "Pantry", quantity: 1, expDate: "2028-09-01", opened: false, notes: "Large bottle" },
-{ id: 95, name: "Ferrara Balsamic Vinegar of Modena", category: "Pantry", location: "Pantry", quantity: 1, expDate: "2029-10-24", opened: false, notes: "8.45 fl oz bottle" },
-{ id: 96, name: "Holland House Red Cooking Wine", category: "Pantry", location: "Pantry", quantity: 1, expDate: "2027-11-01", opened: false, notes: "16 fl oz bottle" },
-{ id: 97, name: "Simply Nature Organic Apple Cider Vinegar", category: "Pantry", location: "Pantry", quantity: 1, expDate: "2027-07-04", opened: false, notes: "Aldi brand, with the mother" },
-{ id: 98, name: "Bowl & Basket Apple Cider Vinegar", category: "Pantry", location: "Pantry", quantity: 1, expDate: "2027-05-28", opened: false, notes: "ShopRite brand" },
-{ id: 99, name: "Burman's All Purpose Soy Sauce", category: "Pantry", location: "Pantry", quantity: 1, expDate: "2026-07-25", opened: false, notes: "Aldi brand" },
-{ id: 100, name: "Great Value Soy Sauce Less Sodium", category: "Pantry", location: "Pantry", quantity: 1, expDate: "2026-11-26", opened: false, notes: "10 fl oz bottle" },
-{ id: 101, name: "Pompeian Extra Virgin Olive Oil Smooth", category: "Pantry", location: "Pantry", quantity: 1, expDate: "2026-10-01", opened: true, notes: "In-use bottle" },
-{ id: 102, name: "Campbell's Condensed Cream of Chicken Soup", category: "Pantry", location: "Pantry", quantity: 5, expDate: "2028-02-12", opened: false, notes: "10.5 oz cans" },
-{ id: 103, name: "Goya Black Beans", category: "Pantry", location: "Pantry", quantity: 1, expDate: "2030-09-22", opened: false, notes: "15.5 oz can" },
-{ id: 104, name: "Carlini Original Canola Oil Spray", category: "Pantry", location: "Pantry", quantity: 1, expDate: "2026-11-15", opened: false, notes: "Aldi brand cooking spray" },
-{ id: 105, name: "Burman's Real Mayonnaise", category: "Pantry", location: "Pantry", quantity: 1, expDate: "2026-06-01", opened: false, notes: "Pantry backup, unopened. Aldi brand." },
-{ id: 106, name: "Kendakids Complete Nutrition Shake - Smooth Strawberry", category: "Beverages", location: "Pantry", quantity: 12, expDate: "2026-12-04", opened: false, notes: "8 fl oz cartons, shelf-stable" },
-{ id: 107, name: "Great Value Parsley Flakes", category: "Pantry", location: "Pantry", quantity: 1, expDate: "2026-09-23", opened: false, notes: "Dried herb shaker" },
-{ id: 108, name: "Great Value Oregano Leaves", category: "Pantry", location: "Pantry", quantity: 1, expDate: "2026-11-21", opened: false, notes: "Dried herb shaker" },
-{ id: 109, name: "Stonemill Iodized Salt", category: "Pantry", location: "Pantry", quantity: 1, expDate: "2030-05-25", opened: false, notes: "Aldi brand, canister" },
-{ id: 110, name: "Great Value Onion Powder", category: "Pantry", location: "Pantry", quantity: 1, expDate: "2028-10-29", opened: false, notes: "Spice shaker" },
-{ id: 111, name: "Frank's RedHot Original", category: "Pantry", location: "Pantry", quantity: 1, expDate: "2027-03-10", opened: true, notes: "Hot sauce bottle, in use" },
-{ id: 112, name: "Chef's Cupboard Vegetable Cooking Stock", category: "Pantry", location: "Pantry", quantity: 1, expDate: "2027-04-10", opened: false, notes: "Aldi brand, carton" },
-{ id: 113, name: "Great Value Chicken Broth", category: "Pantry", location: "Pantry", quantity: 1, expDate: "2027-02-12", opened: false, notes: "32 oz carton" },
-{ id: 114, name: "Nestlé Carnation Evaporated Milk", category: "Pantry", location: "Pantry", quantity: 2, expDate: "2026-10-22", opened: false, notes: "12 fl oz cans" },
-{ id: 115, name: "Hungry Jack Complete Buttermilk Pancake & Waffle Mix", category: "Pantry", location: "Pantry", quantity: 1, expDate: "2027-02-07", opened: false, notes: "Just add water mix" },
-{ id: 116, name: "Kodiak Protein Oatmeal - Maple & Brown Sugar", category: "Pantry", location: "Pantry", quantity: 1, expDate: "2026-10-05", opened: false, notes: "Single-serve packet box" },
-{ id: 117, name: "Kodiak Protein Oatmeal - Apple Cinnamon", category: "Pantry", location: "Pantry", quantity: 1, expDate: "2026-10-31", opened: false, notes: "Single-serve packet box" },
-{ id: 118, name: "Millville Protein Oats & Honey Crunchy Granola", category: "Pantry", location: "Pantry", quantity: 1, expDate: "2026-10-14", opened: false, notes: "Aldi brand, resealable bag" },
-{ id: 119, name: "Oats Overnight Mixed Berries & Cream (batch 1)", category: "Pantry", location: "Pantry", quantity: 1, expDate: "2026-06-13", opened: false, notes: "Single-serve overnight oats pouch" },
-{ id: 120, name: "Oats Overnight Mixed Berries & Cream (batch 2)", category: "Pantry", location: "Pantry", quantity: 4, expDate: "2026-09-29", opened: false, notes: "Single-serve overnight oats pouches" },
-{ id: 121, name: "Terrasoul Superfoods Flax Chia Superseed Blend", category: "Pantry", location: "Pantry", quantity: 1, expDate: "2026-05-31", opened: false, notes: "8 oz bag, cold milled, USDA Organic" },
-{ id: 122, name: "Wholesome Pantry Organic Chia Seeds", category: "Pantry", location: "Pantry", quantity: 1, expDate: "2026-06-23", opened: false, notes: "8 oz bag, ShopRite brand" },
-{ id: 123, name: "Bowl & Basket Pumpkin Spice Instant Oatmeal", category: "Pantry", location: "Pantry", quantity: 22, expDate: "2027-01-16", opened: false, notes: "Individual paper packets" },
-{ id: 124, name: "Kellogg's Rice Krispies", category: "Pantry", location: "Pantry", quantity: 1, expDate: "2026-10-17", opened: true, notes: "9 oz box" },
-{ id: 125, name: "Kellogg's Krave Chocolate", category: "Pantry", location: "Pantry", quantity: 1, expDate: "2026-12-18", opened: false, notes: "17.3 oz box" },
-{ id: 126, name: "Quaker Life Cinnamon", category: "Pantry", location: "Pantry", quantity: 1, expDate: "2027-02-12", opened: false, notes: "Multigrain cereal" },
-{ id: 127, name: "General Mills Honey Nut Cheerios", category: "Pantry", location: "Pantry", quantity: 1, expDate: "2026-12-01", opened: true, notes: "Large box" },
-{ id: 128, name: "Crystal Light Strawberry Orange Banana (pitcher packs)", category: "Beverages", location: "Pantry", quantity: 1, expDate: "2027-02-11", opened: true, notes: "6 pitcher packets, approx 5 remaining" },
-{ id: 129, name: "Crystal Light Zero Sugar Raspberry Lemonade", category: "Beverages", location: "Pantry", quantity: 1, expDate: "2027-11-30", opened: false, notes: "10 individual packets" },
-{ id: 130, name: "Crystal Light Zero Sugar Lemon Iced Tea (box 1)", category: "Beverages", location: "Pantry", quantity: 1, expDate: "2027-12-29", opened: true, notes: "10 individual packets, opened" },
-{ id: 131, name: "Crystal Light Zero Sugar Lemon Iced Tea (box 2)", category: "Beverages", location: "Pantry", quantity: 1, expDate: "2027-12-29", opened: false, notes: "10 individual packets, sealed" },
-{ id: 132, name: "Crystal Light Blueberry Pomegranate Immunity Support", category: "Beverages", location: "Pantry", quantity: 1, expDate: "2027-09-01", opened: false, notes: "10 individual packets" },
-{ id: 133, name: "Crystal Light Energy Boost Raspberry Lemonade", category: "Beverages", location: "Pantry", quantity: 1, expDate: "2027-07-07", opened: true, notes: "10 individual packets, 75mg caffeine" },
-{ id: 134, name: "Crystal Light Lemon Iced Tea (loose packets)", category: "Beverages", location: "Pantry", quantity: 3, expDate: "2027-12-29", opened: false, notes: "Loose individual packets" },
-{ id: 135, name: "Simply Nature Ground Flax Seeds (Aldi)", category: "Pantry", location: "Pantry", quantity: 1, expDate: "2026-10-20", opened: false, notes: "16 oz / 1 lb bag, Non-GMO" },
-{ id: 136, name: "Quaker Protein Granola Bars - Cookies & Cream", category: "Snacks", location: "Pantry", quantity: 1, expDate: "2027-05-27", opened: false, notes: "5-bar box, 10g protein per bar" },
-{ id: 137, name: "Simply Nature Freeze Dried Fuji Apples (Aldi)", category: "Snacks", location: "Pantry", quantity: 1, expDate: "2027-03-25", opened: false, notes: "1.2 oz bag, Non-GMO" },
-{ id: 138, name: "Planters Salted Cashews", category: "Snacks", location: "Pantry", quantity: 2, expDate: "2026-10-14", opened: false, notes: "1.5 oz snack packs" },
-{ id: 139, name: "Planters Honey Roasted Peanuts", category: "Snacks", location: "Pantry", quantity: 1, expDate: "2026-10-14", opened: false, notes: "1.75 oz snack pack" },
-{ id: 140, name: "Ava Organics Organic Coconut Crispy Rollers", category: "Snacks", location: "Pantry", quantity: 1, expDate: "2027-05-05", opened: false, notes: "Original coconut, USDA Organic" },
-{ id: 141, name: "Go Raw Organic Sprouted Pumpkin Seeds", category: "Snacks", location: "Pantry", quantity: 1, expDate: "2026-07-17", opened: false, notes: "Sea salt, 8g protein/serving" },
-{ id: 142, name: "Maier's Premium Italian Bread", category: "Other", location: "Counter", quantity: 2, expDate: "2026-04-28", opened: false, notes: "1 lb 4 oz loaves" },
-{ id: 143, name: "Bamba Peanut Butter Puffs", category: "Snacks", location: "Counter", quantity: 1, expDate: "2026-07-29", opened: true, notes: "Opened/clipped bag, gluten free" },
-{ id: 144, name: "Savoritz Original Clubhouse Crackers (Aldi)", category: "Snacks", location: "Pantry", quantity: 1, expDate: "2026-06-03", opened: true, notes: "13.7 oz box, opened" },
-{ id: 145, name: "Chef Boyardee Mini ABC's & 123's with Meatballs", category: "Pantry", location: "Pantry", quantity: 3, expDate: "2027-08-19", opened: false, notes: "Microcup bowls, 15 oz each" },
-{ id: 146, name: "Chef Boyardee Rice with Chicken & Vegetables", category: "Pantry", location: "Pantry", quantity: 1, expDate: "2027-08-19", opened: false, notes: "Microcup bowl" },
-{ id: 147, name: "Nutty Novelties Cinnamon Almond Butter", category: "Pantry", location: "Pantry", quantity: 1, expDate: "2026-11-10", opened: true, notes: "15 oz jar, freshly ground, low sugar" },
-{ id: 148, name: "Pearl Milling Company Butter Rich Syrup", category: "Other", location: "Counter", quantity: 1, expDate: "2027-11-07", opened: true, notes: "24 fl oz bottle" },
-{ id: 149, name: "Bowl & Basket Specialty Natural Peanut Butter Creamy", category: "Pantry", location: "Pantry", quantity: 1, expDate: "2026-07-28", opened: false, notes: "16 oz jar, stir before use" },
-{ id: 150, name: "Barilla Classic Elbows", category: "Pantry", location: "Pantry", quantity: 1, expDate: "2028-09-01", opened: false, notes: "1 lb box" },
-{ id: 151, name: "Barilla Classic Ziti", category: "Pantry", location: "Pantry", quantity: 1, expDate: "2028-04-01", opened: false, notes: "1 lb box" },
-{ id: 152, name: "Reggano Elbow Macaroni", category: "Pantry", location: "Pantry", quantity: 1, expDate: "2027-10-31", opened: false, notes: "2 lb family size box, Aldi brand" },
-{ id: 153, name: "Ronzoni Orzo No. 47", category: "Pantry", location: "Pantry", quantity: 1, expDate: "2026-10-12", opened: false, notes: "1 lb box" },
-{ id: 154, name: "Bowl & Basket Original Macaroni & Cheese", category: "Pantry", location: "Pantry", quantity: 1, expDate: "2027-01-29", opened: false, notes: "ShopRite brand box" },
-{ id: 155, name: "Cheese Club Macaroni & Cheese", category: "Pantry", location: "Pantry", quantity: 1, expDate: "2027-06-02", opened: false, notes: "Aldi brand box" },
-{ id: 156, name: "Millville Mac & Cheese Made with Chickpea Pasta (batch 1)", category: "Pantry", location: "Pantry", quantity: 1, expDate: "2026-07-03", opened: false, notes: "Aldi brand, orange box" },
-{ id: 157, name: "Millville Mac & Cheese Made with Chickpea Pasta (batch 2)", category: "Pantry", location: "Pantry", quantity: 1, expDate: "2026-10-08", opened: false, notes: "Aldi brand, orange box" },
-{ id: 158, name: "Campbell's SpaghettiOs Original A to Z's (extra can)", category: "Pantry", location: "Pantry", quantity: 1, expDate: "2027-08-08", opened: false, notes: "15.8 oz can" },
-{ id: 159, name: "Ortega Original Mild Taco Sauce", category: "Pantry", location: "Pantry", quantity: 1, expDate: "2027-12-16", opened: false, notes: "16 oz bottle" },
-{ id: 160, name: "Ortega Original Taco Seasoning Mix", category: "Pantry", location: "Pantry", quantity: 1, expDate: "2026-12-26", opened: false, notes: "Single seasoning packet" },
-{ id: 161, name: "StarKist Solid White Albacore Tuna in Water", category: "Pantry", location: "Pantry", quantity: 1, expDate: "2028-08-27", opened: false, notes: "5 oz can, wild caught" },
-{ id: 162, name: "StarKist Light Tuna in Water Pouches", category: "Pantry", location: "Pantry", quantity: 5, expDate: "2028-10-24", opened: false, notes: "2.6 oz Flavor Fresh pouches" },
-{ id: 163, name: "Idahoan Four Cheese Mashed Potatoes", category: "Pantry", location: "Pantry", quantity: 1, expDate: "2026-10-07", opened: false, notes: "Single-serve pouch, gluten free" },
-{ id: 164, name: "Idahoan Loaded Baked Mashed Potatoes", category: "Pantry", location: "Pantry", quantity: 1, expDate: "2026-11-16", opened: false, notes: "Single-serve pouch, gluten free" },
-{ id: 165, name: "Kraft Mac & Cheese Original Flavor Microcups", category: "Pantry", location: "Pantry", quantity: 2, expDate: "2026-07-15", opened: false, notes: "2.05 oz microcups" },
-{ id: 166, name: "Smucker's Magic Shell Chocolate Fudge", category: "Pantry", location: "Pantry", quantity: 1, expDate: "2027-09-23", opened: false, notes: "7.25 oz bottle, do not refrigerate" },
-{ id: 167, name: "Bowl & Basket Medium Egg Noodles", category: "Pantry", location: "Pantry", quantity: 1, expDate: "2027-06-03", opened: false, notes: "ShopRite brand" },
-{ id: 168, name: "Goya Yellow Rice Spanish Style", category: "Pantry", location: "Pantry", quantity: 1, expDate: "", opened: false, notes: "Multi-pack box, 3 packs inside. Exp date not located." },
-{ id: 169, name: "Great Value Long Grain Enriched Rice", category: "Pantry", location: "Pantry", quantity: 1, expDate: "2027-10-24", opened: false, notes: "5 lb bag" },
-{ id: 170, name: "Baker's Corner Premium Granulated Sugar (Aldi)", category: "Pantry", location: "Pantry", quantity: 1, expDate: "2027-12-07", opened: false, notes: "4 lb bag" },
-{ id: 171, name: "Bowl & Basket Bleached Enriched All Purpose Flour", category: "Pantry", location: "Pantry", quantity: 1, expDate: "2026-11-06", opened: false, notes: "ShopRite brand, pre-sifted" },
-{ id: 172, name: "Bowl & Basket Light Brown Sugar", category: "Pantry", location: "Pantry", quantity: 1, expDate: "2028-02-01", opened: false, notes: "ShopRite brand bag" },
-{ id: 173, name: "Baker's Corner Light Brown Sugar (Aldi)", category: "Pantry", location: "Pantry", quantity: 1, expDate: "2027-02-06", opened: true, notes: "Opened bag" },
-{ id: 174, name: "Baker's Corner Classic Yellow Cake Mix (Aldi)", category: "Pantry", location: "Pantry", quantity: 1, expDate: "2026-07-28", opened: false, notes: "Standard box" },
-{ id: 175, name: "Baker's Corner 100% Pure Corn Starch (Aldi)", category: "Pantry", location: "Pantry", quantity: 1, expDate: "2027-10-30", opened: false, notes: "Standard box" },
-{ id: 176, name: "Baking Decorating Supplies (group)", category: "Pantry", location: "Pantry", quantity: 1, expDate: "", opened: false, notes: "Betty Crocker Red Decorating Icing, rainbow sprinkles, sprinkle shakers, glitter gel, food color tubes." },
-{ id: 177, name: "Great Value Cookie Icing Red", category: "Pantry", location: "Pantry", quantity: 1, expDate: "2027-10-17", opened: false, notes: "7 oz pouch" },
-{ id: 178, name: "Great Value Organic Raw Honey", category: "Pantry", location: "Pantry", quantity: 1, expDate: "2026-11-04", opened: true, notes: "12 oz bottle, USDA Organic" },
-{ id: 179, name: "McCormick Pure Vanilla Extract", category: "Pantry", location: "Pantry", quantity: 1, expDate: "", opened: false, notes: "2 fl oz bottle. Exp date not visible." },
-{ id: 180, name: "Bowl & Basket Cinnamon Sugar", category: "Pantry", location: "Pantry", quantity: 1, expDate: "2028-10-17", opened: false, notes: "3.5 oz shaker, ShopRite brand" },
-{ id: 181, name: "Del Monte Diced Peaches Fruit Cup Snacks", category: "Pantry", location: "Pantry", quantity: 12, expDate: "2027-09-01", opened: false, notes: "4 oz cups in 100% juice, family pack of 12" },
-{ id: 182, name: "Entenmann's Little Bites Chocolatey Chip Muffins (multi-pack)", category: "Snacks", location: "Pantry", quantity: 2, expDate: "2026-05-24", opened: false, notes: "Full-size multi-pouch bags" },
-{ id: 183, name: "Entenmann's Little Bites Chocolatey Chip Muffins (individual pouches)", category: "Snacks", location: "Pantry", quantity: 12, expDate: "2026-05-31", opened: false, notes: "1.5 oz individual pouches, loose" },
-{ id: 184, name: "Millville Kids Fruit & Grain Apple-Icous Mini Bars (batch 1)", category: "Snacks", location: "Pantry", quantity: 14, expDate: "2026-11-30", opened: false, notes: "1.3 oz individual pouches, Aldi brand" },
-{ id: 185, name: "Millville Kids Fruit & Grain Apple-Icous Mini Bars (batch 2)", category: "Snacks", location: "Pantry", quantity: 2, expDate: "2026-10-30", opened: false, notes: "1.3 oz individual pouches, Aldi brand, earlier date" },
-{ id: 186, name: "Lumas Squeezable Cinnamon Apple Fruit Blend (Aldi)", category: "Snacks", location: "Pantry", quantity: 3, expDate: "2027-02-20", opened: false, notes: "3.2 oz pouches, Non-GMO, Aldi brand" },
-{ id: 187, name: "Mott's No Sugar Added Applesauce - Cinnamon", category: "Snacks", location: "Pantry", quantity: 1, expDate: "2026-05-11", opened: false, notes: "3.2 oz squeeze pouch, gluten free" },
-{ id: 188, name: "Benton's Mini Chocolate Chip Cookies", category: "Snacks", location: "Pantry", quantity: 1, expDate: "2027-01-07", opened: false, notes: "1 oz pouch, blue bag, nut-free facility, Aldi brand" },
-{ id: 189, name: "Benton's Mini Chewy Chocolate Chip Cookies", category: "Snacks", location: "Pantry", quantity: 4, expDate: "2027-01-10", opened: false, notes: "1 oz pouches, red bag, nut-free facility, Aldi brand" },
-{ id: 190, name: "Savoritz Mini Peanut Butter Sandwich Crackers (loose - use soon)", category: "Snacks", location: "Pantry", quantity: 1, expDate: "2026-04-27", opened: false, notes: "1 oz pouch, Aldi brand" },
-{ id: 191, name: "Savoritz Mini Peanut Butter Sandwich Crackers (loose)", category: "Snacks", location: "Pantry", quantity: 10, expDate: "2026-08-30", opened: false, notes: "1 oz pouches, Aldi brand, loose from box" },
-{ id: 192, name: "Savoritz Mini Peanut Butter Sandwich Crackers (box)", category: "Snacks", location: "Pantry", quantity: 1, expDate: "2026-08-30", opened: false, notes: "12-count box, 1 oz pouches, Aldi brand" },
-{ id: 193, name: "Millville Fruit & Grain Blueberry Soft Baked Bar (exp Sep)", category: "Snacks", location: "Pantry", quantity: 2, expDate: "2026-09-30", opened: false, notes: "Box of bars, Aldi brand" },
-{ id: 194, name: "Millville Fruit & Grain Blueberry Soft Baked Bar (exp Dec)", category: "Snacks", location: "Pantry", quantity: 1, expDate: "2026-12-30", opened: false, notes: "Box of bars, Aldi brand" },
-{ id: 195, name: "Millville Fruit & Grain Apple Cinnamon Soft Baked Bar", category: "Snacks", location: "Pantry", quantity: 1, expDate: "2026-12-30", opened: false, notes: "Box of bars, Aldi brand" },
-{ id: 196, name: "Pepperidge Farm Goldfish Zesty Ranch", category: "Snacks", location: "Pantry", quantity: 1, expDate: "2026-05-03", opened: false, notes: "6.6 oz bag" },
-{ id: 197, name: "Pepperidge Farm Goldfish Colors Cheddar", category: "Snacks", location: "Pantry", quantity: 1, expDate: "2026-06-28", opened: false, notes: "6.6 oz bag, colors sourced from plants" },
-{ id: 198, name: "Mott's Soft Baked Bars - Banana Streusel", category: "Snacks", location: "Pantry", quantity: 2, expDate: "2026-06-27", opened: false, notes: "0.96 oz individual bars, made with applesauce" },
-{ id: 199, name: "Mott's Soft Baked Bars - Chocolate Chip", category: "Snacks", location: "Pantry", quantity: 2, expDate: "2026-08-22", opened: false, notes: "0.96 oz individual bars, made with applesauce" },
-{ id: 201, name: "Lactaid Whole Milk Lactose Free (new jug)", category: "Dairy", location: "Fridge", quantity: 1, expDate: "2026-06-22", opened: false, notes: "96 fl oz jug, new purchase" },
-{ id: 202, name: "Blue Diamond Almond Breeze Hint of Honey Vanilla (carton 1)", category: "Beverages", location: "Fridge", quantity: 1, expDate: "2026-06-11", opened: false, notes: "Half gallon, unopened" },
-{ id: 203, name: "Blue Diamond Almond Breeze Hint of Honey Vanilla (carton 2)", category: "Beverages", location: "Fridge", quantity: 1, expDate: "2026-06-25", opened: false, notes: "Half gallon, unopened" },
-{ id: 204, name: "Nestle Coffee-mate Hazelnut Liquid Creamer", category: "Dairy", location: "Fridge", quantity: 1, expDate: "2026-10-02", opened: false, notes: "32 fl oz bottle" },
-{ id: 205, name: "Nestle Coffee-mate Kit Kat Liquid Creamer", category: "Dairy", location: "Fridge", quantity: 1, expDate: "2026-06-20", opened: false, notes: "32 fl oz bottle, artificial flavors" },
-{ id: 206, name: "Wholesome Pantry Ground Chicken 92% Lean", category: "Meat", location: "Fridge", quantity: 1, expDate: "2026-04-20", opened: false, notes: "1 lb, fresh, no antibiotics, purchased 4/18/26" },
-{ id: 207, name: "Philadelphia Original Cream Cheese", category: "Dairy", location: "Fridge", quantity: 2, expDate: "2026-04-22", opened: false, notes: "Two boxes, use very soon" },
-{ id: 208, name: "Chobani Flip Greek Yogurt - Chocolate Haze Craze", category: "Dairy", location: "Fridge", quantity: 5, expDate: "2026-05-25", opened: false, notes: "4.5 oz flip cups" },
-{ id: 209, name: "Chobani Flip Greek Yogurt - Cinnamon French Toast", category: "Dairy", location: "Fridge", quantity: 5, expDate: "2026-05-22", opened: false, notes: "4.5 oz flip cups, maple flavored with cinnamon rice crisps" },
-{ id: 210, name: "Amoroso's Club Rolls", category: "Other", location: "Counter", quantity: 1, expDate: "2026-04-27", opened: false, notes: "8-count, 16 oz bag, sliced" },
-{ id: 211, name: "Chiquita Bananas", category: "Produce", location: "Counter", quantity: 5, expDate: "2026-04-25", opened: false, notes: "Fresh bunch" },
-{ id: 212, name: "Thomas' Swirl Cinnamon Raisin Bread", category: "Other", location: "Counter", quantity: 1, expDate: "2026-04-28", opened: true, notes: "16 oz loaf, no HFCS, opened" },
-{ id: 213, name: "Tanimura & Antle Iceberg Lettuce", category: "Produce", location: "Fridge", quantity: 1, expDate: "2026-04-26", opened: false, notes: "1 head, wrapped" },
-{ id: 214, name: "Tomatoes (loose, bagged)", category: "Produce", location: "Counter", quantity: 2, expDate: "2026-04-30", opened: false, notes: "2 tomatoes in produce bag" },
-{ id: 215, name: "Herr's Honey BBQ Potato Chips", category: "Snacks", location: "Pantry", quantity: 1, expDate: "2026-07-08", opened: false, notes: "7.75 oz bag, gluten free, ridged" },
-{ id: 216, name: "Herr's Salt & Vinegar Potato Chips", category: "Snacks", location: "Pantry", quantity: 1, expDate: "2026-06-29", opened: false, notes: "7.75 oz bag, gluten free" },
-{ id: 217, name: "Herr's Sour Cream & French Onion Potato Chips", category: "Snacks", location: "Pantry", quantity: 1, expDate: "2026-06-15", opened: false, notes: "7.75 oz bag, gluten free, new flavor" },
-{ id: 218, name: "Stonyfield Organic Yogurt Pouches - Pear Spinach Mango (new)", category: "Dairy", location: "Fridge", quantity: 4, expDate: "2026-05-24", opened: false, notes: "3.5 oz pouches, 4-pack" },
-{ id: 219, name: "Stonyfield Organic Yogurt Cups - Strawberry Vanilla & Blueberry (new)", category: "Dairy", location: "Fridge", quantity: 1, expDate: "2026-05-17", opened: false, notes: "6-pack multipack, 4 oz cups" },
-{ id: 220, name: "Mott's for Tots Apple Juice Drink - Reduced Sugar", category: "Beverages", location: "Fridge", quantity: 1, expDate: "2026-11-30", opened: false, notes: "64 fl oz bottle, 40% less sugar than apple juice" },
-{ id: 221, name: "Ocean Spray Ruby Red 100% Juice", category: "Beverages", location: "Fridge", quantity: 1, expDate: "2026-08-24", opened: false, notes: "60 fl oz bottle, ruby red grapefruit blend" },
-{ id: 222, name: "Bowl & Basket Honeycrisp Apples", category: "Produce", location: "Fridge", quantity: 1, expDate: "2026-05-02", opened: false, notes: "2 lb bag, ShopRite brand" },
-{ id: 223, name: "Thomas' English Muffins", category: "Other", location: "Counter", quantity: 1, expDate: "2026-04-26", opened: false, notes: "6-count bag, use very soon" },
-{ id: 224, name: "Season's Choice Bananas Covered in Dark Chocolate & Peanut Butter", category: "Frozen", location: "Freezer", quantity: 2, expDate: "2027-04-21", opened: false, notes: "Aldi brand" },
-{ id: 225, name: "Season's Choice Strawberries Covered in Dark Chocolate", category: "Frozen", location: "Freezer", quantity: 1, expDate: "2027-04-21", opened: false, notes: "Aldi brand" },
-{ id: 226, name: "Season's Choice Hash Brown Patties", category: "Frozen", location: "Freezer", quantity: 1, expDate: "2028-03-28", opened: false, notes: "20-count box, Aldi brand" },
-{ id: 227, name: "Appétitos Mac & Cheese Bites (box 1)", category: "Frozen", location: "Freezer", quantity: 1, expDate: "2027-07-28", opened: false, notes: "Aldi brand" },
-{ id: 228, name: "Appétitos Mac & Cheese Bites (box 2)", category: "Frozen", location: "Freezer", quantity: 1, expDate: "2027-06-01", opened: false, notes: "Aldi brand" },
-{ id: 229, name: "Breakfast Best Stuffed Blueberry Pancakes", category: "Frozen", location: "Freezer", quantity: 1, expDate: "2027-01-28", opened: false, notes: "Aldi brand" },
-{ id: 230, name: "Breakfast Best Chocolate Chip Pancakes", category: "Frozen", location: "Freezer", quantity: 1, expDate: "2027-09-02", opened: false, notes: "Aldi brand" },
-{ id: 231, name: "M&M's Peanut Butter Ice Cream Bars", category: "Frozen", location: "Freezer", quantity: 1, expDate: "2027-01-31", opened: false, notes: "Box" },
-{ id: 232, name: "Snickers Ice Cream Bars", category: "Frozen", location: "Freezer", quantity: 1, expDate: "2028-02-28", opened: false, notes: "Box" },
-{ id: 233, name: "Friendly Farms Heavy Whipping Cream", category: "Dairy", location: "Fridge", quantity: 2, expDate: "2026-07-05", opened: false, notes: "Aldi brand, 2 cartons" },
-{ id: 234, name: "Wholesome Pantry Hardwood Smoked Bacon", category: "Meat", location: "Fridge", quantity: 1, expDate: "2026-07-16", opened: false, notes: "16 oz, ShopRite brand" },
-{ id: 235, name: "Happy Farms Mild Shredded Cheddar", category: "Dairy", location: "Fridge", quantity: 1, expDate: "2026-08-29", opened: false, notes: "16 oz bag, Aldi brand" },
-{ id: 236, name: "Happy Farms Singles American Cheese", category: "Dairy", location: "Fridge", quantity: 1, expDate: "2026-10-26", opened: false, notes: "16 slices, 12 oz, Aldi brand" },
-{ id: 237, name: "Orange Juice", category: "Beverages", location: "Fridge", quantity: 1, expDate: "2026-07-07", opened: false, notes: "Aldi brand" },
-{ id: 238, name: "Bake House Cookie Dough Core - Fudge", category: "Other", location: "Fridge", quantity: 1, expDate: "2027-03-13", opened: false, notes: "Aldi brand, ready to eat" },
-{ id: 239, name: "Nancy's Organic Greek Yogurt", category: "Dairy", location: "Fridge", quantity: 1, expDate: "2026-05-08", opened: false, notes: "Organic, Aldi brand" },
-{ id: 240, name: "Reggano Angel Hair Pasta", category: "Pantry", location: "Pantry", quantity: 1, expDate: "2028-03-24", opened: false, notes: "2 lb family size box, Aldi brand" },
-{ id: 241, name: "Reggano Fettuccine Pasta", category: "Pantry", location: "Pantry", quantity: 1, expDate: "2028-03-26", opened: false, notes: "2 lb family size box, Aldi brand" },
-{ id: 242, name: "Reggano Grated Parmesan & Romano Cheese (backup)", category: "Dairy", location: "Fridge", quantity: 1, expDate: "2026-12-19", opened: false, notes: "8 oz canister, Aldi brand" },
-{ id: 243, name: "Burman's Yellow Mustard", category: "Other", location: "Fridge", quantity: 1, expDate: "2027-09-22", opened: false, notes: "Aldi brand, squeeze bottle" },
-{ id: 244, name: "Specially Selected Jalapeño Stuffed Olives", category: "Other", location: "Fridge", quantity: 1, expDate: "2028-03-12", opened: false, notes: "7 oz jar, Aldi brand" },
-{ id: 245, name: "Specially Selected Blue Cheese Stuffed Olives", category: "Other", location: "Fridge", quantity: 1, expDate: "2028-03-26", opened: false, notes: "12 oz jar, Aldi brand" },
-{ id: 246, name: "Cheese Club Macaroni & Cheese (new batch)", category: "Pantry", location: "Pantry", quantity: 2, expDate: "2027-09-10", opened: false, notes: "Aldi brand boxes" },
-{ id: 247, name: "Millville Kids Fruit & Grain Strawberry Soft Baked Bars", category: "Snacks", location: "Pantry", quantity: 1, expDate: "2026-12-30", opened: false, notes: "Box, Aldi brand" },
-{ id: 248, name: "Millville Kids Fruit & Grain Apple-Icous Soft Baked Bars", category: "Snacks", location: "Pantry", quantity: 1, expDate: "2027-01-30", opened: false, notes: "Box, Aldi brand" },
-{ id: 249, name: "Benton's Mini Chocolate Chip Cookies 12-Pack Box", category: "Snacks", location: "Pantry", quantity: 1, expDate: "2027-02-19", opened: false, notes: "12 individual 1 oz pouches, Aldi brand" },
-{ id: 250, name: "Southern Grove On The Go Sweet Nut Packs", category: "Snacks", location: "Pantry", quantity: 1, expDate: "2027-01-19", opened: false, notes: "12-count: 4 Milk Choc Cashews, 4 Honey Roasted Peanuts, 4 Himalayan Dark Choc Almonds, Aldi brand" },
-{ id: 251, name: "Lumas Squeezable Apple Cinnamon Fruit Blend", category: "Snacks", location: "Pantry", quantity: 12, expDate: "2027-02-20", opened: false, notes: "Individual pouches, Aldi brand" },
-{ id: 252, name: "Clancy's Cheese Puffs", category: "Snacks", location: "Pantry", quantity: 1, expDate: "2026-08-05", opened: false, notes: "Aldi brand" },
-{ id: 253, name: "Clancy's Puffed Corn Buttery", category: "Snacks", location: "Pantry", quantity: 1, expDate: "2026-09-09", opened: false, notes: "Aldi brand" },
-{ id: 254, name: "Lunch Buddies Mandarin Oranges", category: "Pantry", location: "Pantry", quantity: 2, expDate: "2026-12-18", opened: false, notes: "4-pack cups in 100% fruit juice, 4 oz each per box" },
-{ id: 255, name: "Baker's Corner Milk Chocolate Chips", category: "Pantry", location: "Pantry", quantity: 1, expDate: "2027-08-04", opened: false, notes: "Aldi brand, baking chips" },
-{ id: 256, name: "Baker's Corner Semi Sweet Chocolate Chips", category: "Pantry", location: "Pantry", quantity: 1, expDate: "2028-02-06", opened: false, notes: "Aldi brand, baking chips" },
-{ id: 257, name: "Mission Flour Tortillas", category: "Other", location: "Pantry", quantity: 1, expDate: "2026-06-02", opened: false, notes: "Soft, fajita size" },
-{ id: 258, name: "Chef's Cupboard Italian Style Bread Crumbs Panko", category: "Pantry", location: "Pantry", quantity: 1, expDate: "2028-03-12", opened: false, notes: "8 oz canister, Aldi brand" },
-{ id: 259, name: "Aldi Loven Fresh Cinnamon Raisin Bread", category: "Other", location: "Counter", quantity: 1, expDate: "2026-04-28", opened: false, notes: "Use very soon" },
-{ id: 260, name: "Grimmway Farms Carrots", category: "Produce", location: "Fridge", quantity: 1, expDate: "2026-05-19", opened: false, notes: "2 lb bag" },
-{ id: 261, name: "Russet Potatoes", category: "Produce", location: "Counter", quantity: 1, expDate: "2026-05-19", opened: false, notes: "5 lb bag" },
-{ id: 262, name: "Green Bell Peppers", category: "Produce", location: "Fridge", quantity: 3, expDate: "2026-04-30", opened: false, notes: "Fresh" },
-{ id: 263, name: "Zucchini", category: "Produce", location: "Fridge", quantity: 2, expDate: "2026-04-29", opened: false, notes: "Fresh" },
-{ id: 264, name: "Cucumbers", category: "Produce", location: "Fridge", quantity: 2, expDate: "2026-04-29", opened: false, notes: "Fresh" },
-{ id: 265, name: "Little Salad Bar Spinach", category: "Produce", location: "Fridge", quantity: 1, expDate: "2026-05-01", opened: false, notes: "8 oz bag, Aldi brand" },
-{ id: 266, name: "Bland Farms Premium Sweet Onions", category: "Produce", location: "Counter", quantity: 4, expDate: "2026-05-19", opened: false, notes: "Yellow mesh bag" },
-{ id: 267, name: "Red Onions", category: "Produce", location: "Counter", quantity: 6, expDate: "2026-05-19", opened: false, notes: "Red mesh bag" },
-{ id: 268, name: "Garlic Bulbs", category: "Produce", location: "Counter", quantity: 3, expDate: "2026-06-19", opened: false, notes: "Fresh bulbs" }
-]
-;
-
-const CATEGORIES = ["All", "Dairy", "Produce", "Meat", "Frozen", "Pantry", "Beverages", "Snacks", "Other"];
-const LOCATIONS = ["Fridge", "Freezer", "Pantry", "Counter"];
-
-const STORAGE_KEY = "pantry_items_v23_html";
-const NEXTID_KEY = "pantry_nextid_v23_html";
-
-const EMPTY_FORM = {
-  name: "",
-  category: "Dairy",
-  location: "Fridge",
-  quantity: 1,
-  expDate: "",
-  opened: false,
-  notes: ""
-};
-
-const S = {
-  card: {
-    background: "rgba(255,255,255,0.92)",
-    borderRadius: 20,
-    padding: 16,
-    boxShadow: "0 8px 24px rgba(129,140,248,0.14)",
-    border: "1.5px solid rgba(216,180,254,0.45)",
-    marginBottom: 14,
-    backdropFilter: "blur(8px)"
-  },
-  input: {
-    width: "100%",
-    padding: "10px 13px",
-    borderRadius: 12,
-    border: "1.5px solid #e9d5ff",
-    fontSize: 13,
-    fontFamily: "Georgia,serif",
-    boxSizing: "border-box",
-    outline: "none",
-    background: "#fffafe",
-    color: "#374151"
-  },
-  label: {
-    display: "block",
-    fontSize: 11,
-    fontWeight: 700,
-    color: "#6b21a8",
-    marginBottom: 5,
-    textTransform: "uppercase",
-    letterSpacing: 0.5
-  },
-  tag: {
-    background: "#dcfce7",
-    color: "#166534",
-    padding: "3px 9px",
-    borderRadius: 999,
-    fontSize: 11,
-    fontWeight: 700
-  },
-  btnPrimary: {
-    background: "linear-gradient(135deg,#c084fc,#f9a8d4)",
-    color: "#ffffff",
-    border: "none",
-    borderRadius: 14,
-    padding: "10px 22px",
-    fontWeight: 700,
-    fontSize: 13,
-    cursor: "pointer",
-    boxShadow: "0 6px 14px rgba(192,132,252,0.32)"
-  },
-  btnSecondary: {
-    background: "#f8fafc",
-    color: "#475569",
-    border: "1.5px solid #dbeafe",
-    borderRadius: 14,
-    padding: "10px 22px",
-    fontWeight: 700,
-    fontSize: 13,
-    cursor: "pointer"
-  },
-  iconBtn: {
-    background: "#ffffff",
-    border: "1.5px solid #e9d5ff",
-    borderRadius: 12,
-    padding: "7px 10px",
-    cursor: "pointer",
-    fontSize: 15,
-    lineHeight: 1,
-    boxShadow: "0 3px 10px rgba(148,163,184,0.16)"
-  }
-};
-
-function getDaysUntilExp(dateStr) {
-  if (!dateStr) return 9999;
-
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  const exp = new Date(dateStr + "T12:00:00");
-  exp.setHours(0, 0, 0, 0);
-
-  return Math.round((exp - today) / 86400000);
-}
-
-function getExpiryStatus(dateStr) {
-  if (!dateStr) {
-    return {
-      label: "No date",
-      bg: "#f3f4f6",
-      color: "#6b7280",
-      border: "#d1d5db"
-    };
-  }
-
-  const d = getDaysUntilExp(dateStr);
-
-  if (d < 0) {
-    return {
-      label: `Expired ${Math.abs(d)}d ago`,
-      bg: "#fee2e2",
-      color: "#991b1b",
-      border: "#fca5a5"
-    };
-  }
-
-  if (d <= 3) {
-    return {
-      label: `${d}d left`,
-      bg: "#ffedd5",
-      color: "#9a3412",
-      border: "#fdba74"
-    };
-  }
-
-  if (d <= 7) {
-    return {
-      label: `${d}d left`,
-      bg: "#fef9c3",
-      color: "#713f12",
-      border: "#fde68a"
-    };
-  }
-
-  return {
-    label: `${d}d left`,
-    bg: "#dcfce7",
-    color: "#166534",
-    border: "#86efac"
-  };
-}
-
-function ExpiryBadge({ dateStr }) {
-  const status = getExpiryStatus(dateStr);
-
-  return (
-    <span style={{
-      background: status.bg,
-      color: status.color,
-      border: `1px solid ${status.border}`,
-      padding: "3px 9px",
-      borderRadius: 999,
-      fontSize: 11,
-      fontWeight: 700,
-      whiteSpace: "nowrap"
-    }}>
-      {status.label}
-    </span>
-  );
-}
-
-function SummaryCard({ emoji, label, value, gradient }) {
-  return (
-    <div style={{
-      flex: 1,
-      minWidth: 140,
-      background: gradient,
-      borderRadius: 18,
-      padding: "14px 15px",
-      boxShadow: "0 8px 18px rgba(148,163,184,0.16)",
-      border: "1px solid rgba(255,255,255,0.65)"
-    }}>
-      <div style={{fontSize: 22, marginBottom: 6}}>{emoji}</div>
-      <div style={{fontSize: 11, fontWeight: 700, color: "rgba(55,65,81,0.75)", textTransform: "uppercase", letterSpacing: 0.5}}>
-        {label}
+<div class="header"><div class="header-inner"><h1>🥗 Home Inventory</h1><div class="sub" id="subtitle">Loading inventory...</div></div></div>
+<main class="wrap">
+  <div class="summary-grid">
+    <div class="summary" style="background:linear-gradient(135deg,#fce7f3,#fdf2f8)"><div class="summary-emoji">🧺</div><div class="summary-label">Total Entries</div><div class="summary-value" id="totalEntries">0</div></div>
+    <div class="summary" style="background:linear-gradient(135deg,#ede9fe,#dbeafe)"><div class="summary-emoji">🧩</div><div class="summary-label">Grouped Items</div><div class="summary-value" id="groupedCount">0</div></div>
+    <div class="summary" style="background:linear-gradient(135deg,#fef3c7,#ffedd5)"><div class="summary-emoji">⚡</div><div class="summary-label">Expiring Soon</div><div class="summary-value" id="expiringCount">0</div></div>
+    <div class="summary" style="background:linear-gradient(135deg,#dcfce7,#cffafe)"><div class="summary-emoji">🛒</div><div class="summary-label">Shopping List</div><div class="summary-value" id="shoppingCount">0</div></div>
+  </div>
+  <div class="tabs"><button class="tab active inventory" id="inventoryTab">🧺 Inventory</button><button class="tab shopping" id="shoppingTab">🛒 Shopping List</button></div>
+  <section id="inventorySection">
+    <div class="card controls">
+      <input id="searchInput" placeholder="🔍 Search items..." />
+      <div class="row">
+        <div class="field"><label>Category</label><select id="categoryFilter"></select></div>
+        <div class="field"><label>Location</label><select id="locationFilter"></select></div>
+        <div class="field"><label>Sort By</label><select id="sortBy"><option value="expDate">Expiration</option><option value="name">Name</option><option value="category">Category</option></select></div>
       </div>
-      <div style={{fontSize: 22, fontWeight: 800, color: "#374151", marginTop: 2}}>
-        {value}
+      <div class="row top-actions">
+        <button class="btn btn-primary" id="showAddBtn" style="flex:1">+ Add Item</button>
+        <button class="btn btn-blue" id="scanBtn">📷 Scan</button>
+        <button class="btn btn-orange" id="backupBtn">⬇️ Backup</button>
+        <label class="btn btn-green" style="text-align:center">⬆️ Restore<input type="file" id="restoreInput" accept=".json,application/json" class="hidden" /></label>
+        <button class="btn btn-primary" id="recoverBtn">♻️ Recover</button>
       </div>
     </div>
-  );
-}
-
-function BarcodeScanner({ onDetected, onClose }) {
-  const videoRef = useRef(null);
-  const codeReaderRef = useRef(null);
-  const streamRef = useRef(null);
-
-  const [error, setError] = useState(null);
-  const [scanning, setScanning] = useState(false);
-  const [manualBarcode, setManualBarcode] = useState("");
-
-  useEffect(() => {
-    let cancelled = false;
-
-    async function startScan() {
-      try {
-        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-          setError("Camera scanning is not available in this browser. You can still type or paste the barcode below.");
-          return;
-        }
-
-        if (!window.ZXing) {
-          setError("The scanner library did not load. Check your internet connection, then refresh the page.");
-          return;
-        }
-
-        const codeReader = new ZXing.BrowserMultiFormatReader();
-        codeReaderRef.current = codeReader;
-
-        let selectedDeviceId = null;
-
-        try {
-          const devices = await codeReader.listVideoInputDevices();
-          const backCamera =
-            devices.find(d => /back|rear|environment/i.test(d.label || "")) ||
-            devices[devices.length - 1];
-
-          selectedDeviceId = backCamera ? backCamera.deviceId : null;
-        } catch {
-          selectedDeviceId = null;
-        }
-
-        if (cancelled) return;
-
-        setScanning(true);
-
-        await codeReader.decodeFromVideoDevice(
-          selectedDeviceId,
-          videoRef.current,
-          (result, err) => {
-            if (cancelled) return;
-
-            if (result) {
-              const text = result.getText();
-              stopScanner();
-              onDetected(text);
-            }
-          }
-        );
-      } catch (e) {
-        setScanning(false);
-
-        const message = String(e && e.message ? e.message : e);
-
-        if (message.toLowerCase().includes("permission")) {
-          setError("Camera permission was blocked. Tap the lock or AA icon in the address bar, allow camera access, then refresh.");
-        } else {
-          setError("Camera scanning could not start. You can still type or paste the barcode below.");
-        }
-      }
-    }
-
-    function stopScanner() {
-      try {
-        if (codeReaderRef.current) {
-          codeReaderRef.current.reset();
-        }
-      } catch {}
-
-      try {
-        if (streamRef.current) {
-          streamRef.current.getTracks().forEach(t => t.stop());
-        }
-      } catch {}
-    }
-
-    startScan();
-
-    return () => {
-      cancelled = true;
-      stopScanner();
-    };
-  }, []);
-
-  function submitManualBarcode() {
-    const cleaned = manualBarcode.replace(/\D/g, "");
-
-    if (!cleaned) {
-      alert("Please enter or paste the barcode number.");
-      return;
-    }
-
-    try {
-      if (codeReaderRef.current) {
-        codeReaderRef.current.reset();
-      }
-    } catch {}
-
-    onDetected(cleaned);
-  }
-
-  return (
-    <div style={{
-      position: "fixed",
-      inset: 0,
-      background: "rgba(30,27,75,0.82)",
-      zIndex: 100,
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      padding: 20
-    }}>
-      <div style={{
-        background: "#ffffff",
-        borderRadius: 22,
-        overflow: "hidden",
-        width: "100%",
-        maxWidth: 430,
-        boxShadow: "0 12px 40px rgba(0,0,0,0.35)",
-        border: "1px solid rgba(255,255,255,0.7)"
-      }}>
-        <div style={{
-          background: "linear-gradient(135deg,#a78bfa,#60a5fa,#86efac)",
-          padding: "15px 16px",
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center"
-        }}>
-          <span style={{color: "#ffffff", fontWeight: 800, fontSize: 15}}>📷 Scan Barcode</span>
-
-          <button
-            onClick={onClose}
-            style={{
-              background: "rgba(255,255,255,0.25)",
-              border: "1px solid rgba(255,255,255,0.4)",
-              borderRadius: 10,
-              color: "#fff",
-              padding: "6px 11px",
-              cursor: "pointer",
-              fontSize: 13,
-              fontWeight: 700
-            }}
-          >
-            ✕ Close
-          </button>
-        </div>
-
-        <div style={{position: "relative", background: "#000"}}>
-          <video
-            ref={videoRef}
-            style={{
-              width: "100%",
-              display: "block",
-              maxHeight: 320,
-              minHeight: 220,
-              objectFit: "cover",
-              background: "#111827"
-            }}
-            muted
-            playsInline
-          />
-
-          {scanning && (
-            <div style={{
-              position: "absolute",
-              inset: 0,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              pointerEvents: "none"
-            }}>
-              <div style={{
-                width: "72%",
-                height: 3,
-                background: "#f9a8d4",
-                boxShadow: "0 0 12px #f9a8d4",
-                borderRadius: 999
-              }} />
-            </div>
-          )}
-
-          {!scanning && !error && (
-            <div style={{
-              position: "absolute",
-              inset: 0,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              background: "rgba(0,0,0,0.45)"
-            }}>
-              <span style={{color: "#fff", fontSize: 13, fontWeight: 700}}>Starting camera…</span>
-            </div>
-          )}
-        </div>
-
-        {error && (
-          <div style={{
-            background: "#fef2f2",
-            color: "#991b1b",
-            borderTop: "1px solid #fecaca",
-            padding: "10px 14px",
-            fontSize: 12,
-            lineHeight: 1.4,
-            fontWeight: 700
-          }}>
-            ⚠️ {error}
-          </div>
-        )}
-
-        <div style={{
-          padding: 14,
-          background: "#f8fafc",
-          borderTop: "1px solid #e5e7eb"
-        }}>
-          <p style={{
-            margin: "0 0 10px",
-            fontSize: 12,
-            color: "#6b7280",
-            textAlign: "center",
-            lineHeight: 1.4
-          }}>
-            Hold the barcode steady in good lighting. If it does not scan, type or paste the number below.
-          </p>
-
-          <div style={{display: "flex", gap: 8}}>
-            <input
-              value={manualBarcode}
-              onChange={e => setManualBarcode(e.target.value)}
-              inputMode="numeric"
-              placeholder="Enter barcode number"
-              style={{
-                ...S.input,
-                background: "#ffffff",
-                border: "1.5px solid #dbeafe",
-                flex: 1
-              }}
-            />
-
-            <button
-              onClick={submitManualBarcode}
-              style={{
-                ...S.btnPrimary,
-                padding: "10px 14px",
-                whiteSpace: "nowrap"
-              }}
-            >
-              Use
-            </button>
-          </div>
-        </div>
-      </div>
+    <div class="card hidden" id="addCard">
+      <h3 style="margin-bottom:14px;color:#6b21a8;font-size:17px">Add New Item</h3>
+      <div id="scanStatus"></div>
+      <div id="formArea"></div>
+      <div class="row" style="margin-top:14px"><button class="btn btn-primary" id="saveItemBtn">Save Item</button><button class="btn-secondary" id="cancelAddBtn">Cancel</button></div>
     </div>
-  );
-}
-
-async function lookupBarcode(barcode) {
-  try {
-    const res = await fetch(`https://world.openfoodfacts.org/api/v0/product/${barcode}.json`);
-    const data = await res.json();
-
-    if (data.status === 1 && data.product) {
-      const p = data.product;
-      const name = p.product_name || p.product_name_en || "";
-      const brand = p.brands || "";
-      const fullName = brand && name ? `${brand} ${name}` : name || brand || "";
-      const cats = (p.categories || "").toLowerCase();
-
-      let category = "Other";
-
-      if (cats.includes("dairy") || cats.includes("yogurt") || cats.includes("cheese") || cats.includes("milk") || cats.includes("butter")) {
-        category = "Dairy";
-      } else if (cats.includes("frozen")) {
-        category = "Frozen";
-      } else if (cats.includes("meat") || cats.includes("chicken") || cats.includes("beef") || cats.includes("pork")) {
-        category = "Meat";
-      } else if (cats.includes("beverage") || cats.includes("juice") || cats.includes("drink")) {
-        category = "Beverages";
-      } else if (cats.includes("snack") || cats.includes("chip") || cats.includes("cracker") || cats.includes("cookie")) {
-        category = "Snacks";
-      } else if (cats.includes("fruit") || cats.includes("vegetable") || cats.includes("produce")) {
-        category = "Produce";
-      } else if (cats.includes("pasta") || cats.includes("rice") || cats.includes("cereal") || cats.includes("bread") || cats.includes("flour")) {
-        category = "Pantry";
-      }
-
-      return { found: true, name: fullName, category, notes: `UPC: ${barcode}` };
-    }
-
-    return { found: false };
-  } catch {
-    return { found: false };
-  }
-}
-
-function FormFields({ f, setF, allItems = [] }) {
-  const [showSug, setShowSug] = useState(false);
-
-  const suggestions = f.name.trim().length >= 2
-    ? allItems
-        .filter(i => i.name.toLowerCase().includes(f.name.toLowerCase()))
-        .slice(0, 6)
-    : [];
-
-  function apply(item) {
-    setF({
-      ...f,
-      name: item.name,
-      category: item.category,
-      location: item.location,
-      notes: item.notes,
-      opened: false,
-      expDate: "",
-      quantity: 1
-    });
-    setShowSug(false);
-  }
-
-  return (
-    <div style={{display: "grid", gridTemplateColumns: "1fr 1fr", gap: "11px 16px"}}>
-      <div style={{gridColumn: "1/-1", position: "relative"}}>
-        <label style={S.label}>Item Name</label>
-        <input
-          style={S.input}
-          value={f.name}
-          onChange={e => {
-            setF({...f, name: e.target.value});
-            setShowSug(true);
-          }}
-          onFocus={() => setShowSug(true)}
-          onBlur={() => setTimeout(() => setShowSug(false), 150)}
-          placeholder="e.g. Greek Yogurt - Vanilla"
-          autoComplete="off"
-        />
-
-        {showSug && suggestions.length > 0 && (
-          <div style={{
-            position: "absolute",
-            top: "100%",
-            left: 0,
-            right: 0,
-            zIndex: 50,
-            background: "#fff",
-            border: "1.5px solid #d8b4fe",
-            borderRadius: 14,
-            boxShadow: "0 8px 22px rgba(0,0,0,0.12)",
-            marginTop: 4,
-            overflow: "hidden"
-          }}>
-            {suggestions.map(item => (
-              <div
-                key={item.id}
-                onMouseDown={() => apply(item)}
-                onTouchEnd={() => apply(item)}
-                style={{
-                  padding: "10px 12px",
-                  cursor: "pointer",
-                  borderBottom: "1px solid #f5f3ff"
-                }}
-              >
-                <div style={{fontSize: 13, fontWeight: 700, color: "#4c1d95"}}>{item.name}</div>
-                <div style={{fontSize: 11, color: "#6b7280", marginTop: 2}}>
-                  {item.category} · {item.location} · Qty: {item.quantity}
-                </div>
-              </div>
-            ))}
-
-            <div style={{
-              padding: "7px 12px",
-              fontSize: 11,
-              color: "#9ca3af",
-              background: "#faf5ff",
-              fontStyle: "italic"
-            }}>
-              Tap to auto-fill fields
-            </div>
-          </div>
-        )}
-      </div>
-
-      <div>
-        <label style={S.label}>Category</label>
-        <select style={S.input} value={f.category} onChange={e => setF({...f, category: e.target.value})}>
-          {CATEGORIES.filter(c => c !== "All").map(c => <option key={c}>{c}</option>)}
-        </select>
-      </div>
-
-      <div>
-        <label style={S.label}>Location</label>
-        <select style={S.input} value={f.location} onChange={e => setF({...f, location: e.target.value})}>
-          {LOCATIONS.map(l => <option key={l}>{l}</option>)}
-        </select>
-      </div>
-
-      <div>
-        <label style={S.label}>Quantity</label>
-        <input
-          style={S.input}
-          type="number"
-          min={0}
-          value={f.quantity}
-          onChange={e => setF({...f, quantity: parseInt(e.target.value) || 0})}
-        />
-      </div>
-
-      <div>
-        <label style={S.label}>Expiration Date</label>
-        <input
-          style={S.input}
-          type="date"
-          value={f.expDate}
-          onChange={e => setF({...f, expDate: e.target.value})}
-        />
-      </div>
-
-      <div style={{gridColumn: "1/-1"}}>
-        <label style={S.label}>Notes</label>
-        <input
-          style={S.input}
-          value={f.notes}
-          onChange={e => setF({...f, notes: e.target.value})}
-          placeholder="Optional notes..."
-        />
-      </div>
-
-      <div style={{gridColumn: "1/-1", display: "flex", alignItems: "center", gap: 8}}>
-        <input
-          type="checkbox"
-          id="opened-check"
-          checked={f.opened}
-          onChange={e => setF({...f, opened: e.target.checked})}
-          style={{width: 17, height: 17, accentColor: "#c084fc", cursor: "pointer"}}
-        />
-        <label htmlFor="opened-check" style={{...S.label, marginBottom: 0, cursor: "pointer"}}>
-          Opened
-        </label>
-      </div>
+    <div id="inventoryList"></div>
+  </section>
+  <section id="shoppingSection" class="hidden">
+    <div class="card" style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+      <div><h3 style="margin:0;color:#6b21a8;font-size:18px">🛒 Shopping List</h3><p style="margin:4px 0 0;color:#6b7280;font-size:12px">Items move here when you no longer have them.</p></div>
+      <button class="btn-secondary" id="clearBoughtBtn">Clear Bought</button>
     </div>
-  );
-}
-
-function App() {
-  const [items, setItems] = useState(() => {
-    try {
-      const s = localStorage.getItem(STORAGE_KEY);
-      if (!s) return INITIAL_ITEMS;
-
-      const saved = JSON.parse(s);
-
-      // If a previous blank version saved an empty list, automatically restore the built-in pantry list.
-      if (!Array.isArray(saved) || saved.length === 0) return INITIAL_ITEMS;
-
-      return saved;
-    } catch {
-      return INITIAL_ITEMS;
-    }
-  });
-
-  const [filterCat, setFilterCat] = useState("All");
-  const [filterLoc, setFilterLoc] = useState("All");
-  const [search, setSearch] = useState("");
-  const [editingId, setEditingId] = useState(null);
-  const [form, setForm] = useState(EMPTY_FORM);
-  const [showAdd, setShowAdd] = useState(false);
-  const [sortBy, setSortBy] = useState("expDate");
-  const [showScanner, setShowScanner] = useState(false);
-  const [scanStatus, setScanStatus] = useState(null);
-
-  const [nextId, setNextId] = useState(() => {
-    try {
-      const s = localStorage.getItem(NEXTID_KEY);
-      if (s) return parseInt(s);
-      const maxExisting = INITIAL_ITEMS.reduce((max, item) => Math.max(max, item.id || 0), 0);
-      return maxExisting + 1;
-    } catch {
-      return 1;
-    }
-  });
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
-    } catch {}
-  }, [items]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(NEXTID_KEY, String(nextId));
-    } catch {}
-  }, [nextId]);
-
-  const filtered = items
-    .filter(i => filterCat === "All" || i.category === filterCat)
-    .filter(i => filterLoc === "All" || i.location === filterLoc)
-    .filter(i =>
-      i.name.toLowerCase().includes(search.toLowerCase()) ||
-      (i.notes || "").toLowerCase().includes(search.toLowerCase())
-    )
-    .sort((a, b) => {
-      if (sortBy === "expDate") {
-        const da = a.expDate ? new Date(a.expDate + "T12:00:00") : new Date("2099-01-01");
-        const db = b.expDate ? new Date(b.expDate + "T12:00:00") : new Date("2099-01-01");
-        return da - db;
-      }
-
-      if (sortBy === "name") return a.name.localeCompare(b.name);
-      if (sortBy === "category") return a.category.localeCompare(b.category);
-      return 0;
-    });
-
-  function startEdit(item) {
-    setEditingId(item.id);
-    setForm({...item});
-    setShowAdd(false);
-  }
-
-  function cancelEdit() {
-    setEditingId(null);
-    setForm(EMPTY_FORM);
-  }
-
-  function saveEdit() {
-    if (!form.name.trim()) {
-      alert("Please add an item name.");
-      return;
-    }
-
-    setItems(prev => prev.map(i => i.id === editingId ? {...form, id: editingId} : i));
-    setEditingId(null);
-    setForm(EMPTY_FORM);
-  }
-
-  function deleteItem(id) {
-    if (window.confirm("Delete this item?")) {
-      setItems(prev => prev.filter(i => i.id !== id));
-    }
-  }
-
-  function addItem() {
-    if (!form.name.trim()) {
-      alert("Please add an item name.");
-      return;
-    }
-
-    const id = nextId;
-    setNextId(n => n + 1);
-    setItems(prev => [...prev, {...form, id}]);
-    setShowAdd(false);
-    setForm(EMPTY_FORM);
-    setScanStatus(null);
-  }
-
-  function toggleOpened(id) {
-    setItems(prev => prev.map(i => i.id === id ? {...i, opened: !i.opened} : i));
-  }
-
-  function exportBackup() {
-    const backup = {
-      createdAt: new Date().toISOString(),
-      items,
-      nextId
-    };
-
-    const blob = new Blob([JSON.stringify(backup, null, 2)], {type: "application/json"});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-
-    a.href = url;
-    a.download = "home-inventory-backup.json";
-    a.click();
-
-    URL.revokeObjectURL(url);
-  }
-
-  function importBackup(event) {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-
-    reader.onload = e => {
-      try {
-        const data = JSON.parse(e.target.result);
-        const importedItems = Array.isArray(data) ? data : data.items;
-
-        if (!Array.isArray(importedItems)) {
-          alert("This backup file does not look valid.");
-          return;
-        }
-
-        const importedNextId =
-          data.nextId ||
-          importedItems.reduce((max, item) => Math.max(max, item.id || 0), 0) + 1;
-
-        setItems(importedItems);
-        setNextId(importedNextId);
-        alert("Backup imported.");
-      } catch {
-        alert("Could not read that backup file.");
-      }
-    };
-
-    reader.readAsText(file);
-    event.target.value = "";
-  }
-
-  function recoverStarterInventory() {
-    const ok = window.confirm(
-      "This will replace the current pantry list with the built-in starter inventory. Continue?"
-    );
-
-    if (!ok) return;
-
-    const freshItems = INITIAL_ITEMS.map(item => ({...item}));
-    const freshNextId = freshItems.reduce((max, item) => Math.max(max, item.id || 0), 0) + 1;
-
-    setItems(freshItems);
-    setNextId(freshNextId);
-    setShowAdd(false);
-    setEditingId(null);
-    setForm(EMPTY_FORM);
-    alert("Starter inventory restored.");
-  }
-
-  async function handleBarcodeDetected(barcode) {
-    setShowScanner(false);
-    setShowAdd(true);
-    setScanStatus("looking");
-
-    const result = await lookupBarcode(barcode);
-
-    if (result.found) {
-      setForm(f => ({
-        ...f,
-        name: result.name,
-        category: result.category,
-        notes: result.notes
-      }));
-      setScanStatus("found");
-    } else {
-      setForm(f => ({...f, notes: `UPC: ${barcode}`}));
-      setScanStatus("notfound");
-    }
-
-    setTimeout(() => setScanStatus(null), 4000);
-  }
-
-  const expiringCount = items.filter(i => {
-    const d = getDaysUntilExp(i.expDate);
-    return d >= 0 && d <= 5;
-  }).length;
-
-  const expiredCount = items.filter(i => i.expDate && getDaysUntilExp(i.expDate) < 0).length;
-
-  const openedCount = items.filter(i => i.opened).length;
-
-  return (
-    <div style={{minHeight: "100vh", fontFamily: "Georgia,serif", paddingBottom: 60}}>
-      <div style={{
-        background: "linear-gradient(135deg,#c084fc 0%,#93c5fd 38%,#86efac 75%,#fde68a 100%)",
-        padding: "28px 24px 20px",
-        position: "sticky",
-        top: 0,
-        zIndex: 10,
-        boxShadow: "0 6px 24px rgba(147,197,253,0.35)",
-        borderBottom: "1px solid rgba(255,255,255,0.55)"
-      }}>
-        <div style={{maxWidth: 900, margin: "0 auto"}}>
-          <h1 style={{
-            color: "#ffffff",
-            margin: 0,
-            fontSize: 28,
-            fontWeight: 800,
-            letterSpacing: "-0.5px",
-            textShadow: "0 2px 8px rgba(0,0,0,0.15)"
-          }}>
-            🥗 Home Inventory
-          </h1>
-
-          <p style={{
-            color: "#ffffff",
-            margin: "5px 0 0",
-            fontSize: 13,
-            fontWeight: 700,
-            textShadow: "0 1px 5px rgba(0,0,0,0.12)"
-          }}>
-            {items.length} items tracked
-
-            {expiringCount > 0 && (
-              <span style={{
-                marginLeft: 10,
-                background: "#fef3c7",
-                color: "#92400e",
-                borderRadius: 999,
-                padding: "2px 8px",
-                fontSize: 11,
-                fontWeight: 800
-              }}>
-                ⚡ {expiringCount} expiring soon
-              </span>
-            )}
-
-            {expiredCount > 0 && (
-              <span style={{
-                marginLeft: 6,
-                background: "#fee2e2",
-                color: "#991b1b",
-                borderRadius: 999,
-                padding: "2px 8px",
-                fontSize: 11,
-                fontWeight: 800
-              }}>
-                ❌ {expiredCount} expired
-              </span>
-            )}
-          </p>
-        </div>
-      </div>
-
-      <div style={{maxWidth: 900, margin: "0 auto", padding: "20px 16px 0"}}>
-        <div style={{display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 16}}>
-          <SummaryCard emoji="🧺" label="Total Items" value={items.length} gradient="linear-gradient(135deg,#fce7f3,#fdf2f8)" />
-          <SummaryCard emoji="⚡" label="Expiring Soon" value={expiringCount} gradient="linear-gradient(135deg,#fef3c7,#ffedd5)" />
-          <SummaryCard emoji="❌" label="Expired" value={expiredCount} gradient="linear-gradient(135deg,#fee2e2,#ffe4e6)" />
-          <SummaryCard emoji="🔓" label="Opened" value={openedCount} gradient="linear-gradient(135deg,#dbeafe,#ede9fe)" />
-        </div>
-
-        <div style={{...S.card, marginBottom: 16, display: "flex", flexDirection: "column", gap: 12}}>
-          <input
-            style={{
-              ...S.input,
-              background: "#fdf4ff",
-              border: "1.5px solid #e9d5ff"
-            }}
-            placeholder="🔍 Search items..."
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-          />
-
-          <div style={{display: "flex", gap: 10, flexWrap: "wrap"}}>
-            <div style={{flex: 1, minWidth: 120}}>
-              <label style={S.label}>Category</label>
-              <select style={S.input} value={filterCat} onChange={e => setFilterCat(e.target.value)}>
-                {CATEGORIES.map(c => <option key={c}>{c}</option>)}
-              </select>
-            </div>
-
-            <div style={{flex: 1, minWidth: 120}}>
-              <label style={S.label}>Location</label>
-              <select style={S.input} value={filterLoc} onChange={e => setFilterLoc(e.target.value)}>
-                {["All", ...LOCATIONS].map(l => <option key={l}>{l}</option>)}
-              </select>
-            </div>
-
-            <div style={{flex: 1, minWidth: 120}}>
-              <label style={S.label}>Sort By</label>
-              <select style={S.input} value={sortBy} onChange={e => setSortBy(e.target.value)}>
-                <option value="expDate">Expiration</option>
-                <option value="name">Name</option>
-                <option value="category">Category</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="top-actions" style={{display: "flex", gap: 10}}>
-            <button
-              onClick={() => {
-                setShowAdd(true);
-                setEditingId(null);
-                setForm(EMPTY_FORM);
-                setScanStatus(null);
-              }}
-              style={{...S.btnPrimary, flex: 1, padding: "12px 16px", fontSize: 14}}
-            >
-              + Add Item
-            </button>
-
-            <button
-              onClick={() => {
-                setShowScanner(true);
-                setShowAdd(false);
-                setForm(EMPTY_FORM);
-                setScanStatus(null);
-              }}
-              style={{
-                background: "linear-gradient(135deg,#60a5fa,#a78bfa)",
-                color: "#fff",
-                border: "none",
-                borderRadius: 14,
-                padding: "12px 16px",
-                fontWeight: 800,
-                fontSize: 14,
-                cursor: "pointer",
-                boxShadow: "0 6px 14px rgba(96,165,250,0.28)"
-              }}
-            >
-              📷 Scan
-            </button>
-
-            <button
-              onClick={exportBackup}
-              style={{
-                background: "linear-gradient(135deg,#fcd34d,#fb923c)",
-                color: "#7c2d12",
-                border: "none",
-                borderRadius: 14,
-                padding: "12px 16px",
-                fontWeight: 800,
-                fontSize: 14,
-                cursor: "pointer",
-                boxShadow: "0 6px 14px rgba(251,146,60,0.24)"
-              }}
-            >
-              ⬇️ Backup
-            </button>
-
-            <label style={{
-              background: "linear-gradient(135deg,#86efac,#67e8f9)",
-              color: "#14532d",
-              border: "none",
-              borderRadius: 14,
-              padding: "12px 16px",
-              fontWeight: 800,
-              fontSize: 14,
-              cursor: "pointer",
-              boxShadow: "0 6px 14px rgba(52,211,153,0.24)",
-              textAlign: "center"
-            }}>
-              ⬆️ Restore
-              <input type="file" accept=".json,application/json" onChange={importBackup} style={{display: "none"}} />
-            </label>
-
-            <button
-              onClick={recoverStarterInventory}
-              style={{
-                background: "linear-gradient(135deg,#fecdd3,#fdba74)",
-                color: "#7c2d12",
-                border: "none",
-                borderRadius: 14,
-                padding: "12px 16px",
-                fontWeight: 800,
-                fontSize: 14,
-                cursor: "pointer",
-                boxShadow: "0 6px 14px rgba(251,146,60,0.22)"
-              }}
-            >
-              ♻️ Recover List
-            </button>
-          </div>
-        </div>
-
-        {showScanner && (
-          <BarcodeScanner
-            onDetected={handleBarcodeDetected}
-            onClose={() => setShowScanner(false)}
-          />
-        )}
-
-        {showAdd && (
-          <div style={S.card}>
-            <h3 style={{margin: "0 0 14px", color: "#6b21a8", fontSize: 17}}>
-              Add New Item
-            </h3>
-
-            {scanStatus === "looking" && (
-              <div style={{
-                background: "#eff6ff",
-                border: "1.5px solid #bfdbfe",
-                borderRadius: 12,
-                padding: "10px 12px",
-                marginBottom: 12,
-                fontSize: 13,
-                color: "#1d4ed8",
-                fontWeight: 700
-              }}>
-                🔍 Looking up product…
-              </div>
-            )}
-
-            {scanStatus === "found" && (
-              <div style={{
-                background: "#f0fdf4",
-                border: "1.5px solid #bbf7d0",
-                borderRadius: 12,
-                padding: "10px 12px",
-                marginBottom: 12,
-                fontSize: 13,
-                color: "#166534",
-                fontWeight: 700
-              }}>
-                ✅ Product found! Review and update the fields below.
-              </div>
-            )}
-
-            {scanStatus === "notfound" && (
-              <div style={{
-                background: "#fef9c3",
-                border: "1.5px solid #fde68a",
-                borderRadius: 12,
-                padding: "10px 12px",
-                marginBottom: 12,
-                fontSize: 13,
-                color: "#92400e",
-                fontWeight: 700
-              }}>
-                ⚠️ Product not in database. UPC saved to notes. Please fill in the name.
-              </div>
-            )}
-
-            <FormFields f={form} setF={setForm} allItems={items} />
-
-            <div style={{display: "flex", gap: 10, marginTop: 14, flexWrap: "wrap"}}>
-              <button onClick={addItem} style={S.btnPrimary}>Save Item</button>
-              <button
-                onClick={() => {
-                  setShowAdd(false);
-                  setForm(EMPTY_FORM);
-                  setScanStatus(null);
-                }}
-                style={S.btnSecondary}
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        )}
-
-        {filtered.length === 0 && (
-          <div style={{
-            textAlign: "center",
-            color: "#6b7280",
-            padding: 40,
-            background: "rgba(255,255,255,0.65)",
-            borderRadius: 20,
-            border: "1.5px dashed #d8b4fe"
-          }}>
-            No items found.
-          </div>
-        )}
-
-        {filtered.map(item => {
-          const isEditing = editingId === item.id;
-          const days = getDaysUntilExp(item.expDate);
-          const expired = item.expDate && days < 0;
-
-          let borderColor = "#86efac";
-          if (expired) borderColor = "#fca5a5";
-          else if (item.expDate && days <= 3) borderColor = "#fb923c";
-          else if (item.expDate && days <= 7) borderColor = "#fde047";
-          else if (item.location === "Freezer") borderColor = "#93c5fd";
-          else if (item.location === "Pantry") borderColor = "#c084fc";
-          else if (item.location === "Counter") borderColor = "#f9a8d4";
-
-          return (
-            <div
-              key={item.id}
-              style={{
-                ...S.card,
-                borderLeft: `6px solid ${borderColor}`,
-                opacity: expired ? 0.86 : 1
-              }}
-            >
-              {isEditing ? (
-                <>
-                  <h3 style={{margin: "0 0 14px", color: "#6b21a8", fontSize: 16}}>
-                    Edit Item
-                  </h3>
-
-                  <FormFields f={form} setF={setForm} allItems={[]} />
-
-                  <div style={{display: "flex", gap: 10, marginTop: 14, flexWrap: "wrap"}}>
-                    <button onClick={saveEdit} style={S.btnPrimary}>Save</button>
-                    <button onClick={cancelEdit} style={S.btnSecondary}>Cancel</button>
-                  </div>
-                </>
-              ) : (
-                <div style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "flex-start",
-                  gap: 12,
-                  flexWrap: "wrap"
-                }}>
-                  <div style={{flex: 1, minWidth: 230}}>
-                    <div style={{display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap"}}>
-                      <span style={{fontWeight: 800, fontSize: 15, color: "#4c1d95"}}>
-                        {item.name}
-                      </span>
-
-                      {item.opened && (
-                        <span style={{
-                          background: "#fef3c7",
-                          color: "#92400e",
-                          border: "1px solid #fde68a",
-                          padding: "2px 8px",
-                          borderRadius: 999,
-                          fontSize: 10,
-                          fontWeight: 800
-                        }}>
-                          OPENED
-                        </span>
-                      )}
-                    </div>
-
-                    <div style={{display: "flex", gap: 6, marginTop: 7, flexWrap: "wrap", alignItems: "center"}}>
-                      <span style={S.tag}>{item.category}</span>
-                      <span style={{...S.tag, background: "#dbeafe", color: "#1d4ed8"}}>{item.location}</span>
-                      <span style={{...S.tag, background: "#f3e8ff", color: "#6b21a8"}}>Qty: {item.quantity}</span>
-                      <ExpiryBadge dateStr={item.expDate} />
-                    </div>
-
-                    {item.expDate && (
-                      <div style={{fontSize: 11, color: "#6b7280", marginTop: 5}}>
-                        {new Date(item.expDate + "T12:00:00").toLocaleDateString("en-US", {
-                          month: "short",
-                          day: "numeric",
-                          year: "numeric"
-                        })}
-                      </div>
-                    )}
-
-                    {item.notes && (
-                      <div style={{
-                        fontSize: 12,
-                        color: "#6b7280",
-                        marginTop: 6,
-                        fontStyle: "italic",
-                        lineHeight: 1.35
-                      }}>
-                        {item.notes}
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="item-actions" style={{display: "flex", gap: 7, flexShrink: 0}}>
-                    <button
-                      onClick={() => toggleOpened(item.id)}
-                      title={item.opened ? "Mark sealed" : "Mark opened"}
-                      style={{
-                        ...S.iconBtn,
-                        background: item.opened ? "#fef3c7" : "#dcfce7",
-                        color: item.opened ? "#92400e" : "#166534"
-                      }}
-                    >
-                      {item.opened ? "🔓" : "🔒"}
-                    </button>
-
-                    <button onClick={() => startEdit(item)} style={S.iconBtn}>✏️</button>
-
-                    <button
-                      onClick={() => deleteItem(item.id)}
-                      style={{
-                        ...S.iconBtn,
-                        background: "#fff1f2",
-                        borderColor: "#fecdd3"
-                      }}
-                    >
-                      🗑️
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-const root = ReactDOM.createRoot(document.getElementById("root"));
-root.render(<App />);
+    <div id="shoppingList"></div>
+  </section>
+</main>
+<div id="scannerModal" class="modal hidden">
+  <div class="modal-box">
+    <div style="background:linear-gradient(135deg,#a78bfa,#60a5fa,#86efac);padding:15px 16px;display:flex;justify-content:space-between;align-items:center"><span style="color:#fff;font-weight:800;font-size:15px">📷 Scan Barcode</span><button id="closeScannerBtn" style="background:rgba(255,255,255,.25);border:1px solid rgba(255,255,255,.4);border-radius:10px;color:#fff;padding:6px 11px;font-weight:800">✕ Close</button></div>
+    <div style="position:relative;background:#000"><video id="scannerVideo" muted playsinline></video><div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none"><div style="width:72%;height:3px;background:#f9a8d4;box-shadow:0 0 12px #f9a8d4;border-radius:999px"></div></div></div>
+    <div id="scannerError" class="hidden" style="background:#fef2f2;color:#991b1b;border-top:1px solid #fecaca;padding:10px 14px;font-size:12px;line-height:1.4;font-weight:800"></div>
+    <div style="padding:14px;background:#f8fafc;border-top:1px solid #e5e7eb"><p style="margin:0 0 10px;font-size:12px;color:#6b7280;text-align:center;line-height:1.4">Hold the barcode steady in good lighting. If it does not scan, type or paste the number below.</p><div style="display:flex;gap:8px"><input id="manualBarcode" inputmode="numeric" placeholder="Enter barcode number" style="background:#fff;border:1.5px solid #dbeafe;flex:1" /><button class="btn btn-primary" id="manualBarcodeBtn" style="padding:10px 14px;white-space:nowrap">Use</button></div></div>
+  </div>
+</div>
+<script>
+const INITIAL_ITEMS = [{"id": 1, "name": "Stonyfield Organic Yogurt Pouch - Strawberry Banana", "category": "Dairy", "location": "Fridge", "quantity": 1, "expDate": "2026-05-08", "opened": false, "notes": "Kids' pouch"}, {"id": 2, "name": "Stonyfield Organic Yogurt Pouch - Blueberry", "category": "Dairy", "location": "Fridge", "quantity": 2, "expDate": "2026-05-06", "opened": false, "notes": "Kids' pouch"}, {"id": 3, "name": "Stonyfield Organic Yogurt Pouch - Pear Spinach Mango", "category": "Dairy", "location": "Fridge", "quantity": 1, "expDate": "2026-05-10", "opened": false, "notes": "Kids' pouch"}, {"id": 4, "name": "Stonyfield Organic Yogurt Cups - Blueberry & Strawberry Vanilla", "category": "Dairy", "location": "Fridge", "quantity": 1, "expDate": "2026-05-06", "opened": false, "notes": "Multipack cups"}, {"id": 5, "name": "Stonyfield Organic Drinkable Yogurt - Strawberry Banana", "category": "Dairy", "location": "Fridge", "quantity": 5, "expDate": "2026-04-27", "opened": false, "notes": "Drinkable bottles"}, {"id": 6, "name": "Simply Nature Organic Greek Yogurt - Vanilla Bean", "category": "Dairy", "location": "Fridge", "quantity": 1, "expDate": "2026-04-30", "opened": true, "notes": "32 oz tub"}, {"id": 7, "name": "Cabot Creamery Triple Cream Greek Yogurt - Vanilla Bean", "category": "Dairy", "location": "Fridge", "quantity": 1, "expDate": "2026-05-10", "opened": false, "notes": "32 oz tub"}, {"id": 8, "name": "Chobani Flip Greek Yogurt - Peanut Butter Cup", "category": "Dairy", "location": "Fridge", "quantity": 1, "expDate": "2026-05-31", "opened": false, "notes": "4.5 oz flip cup"}, {"id": 9, "name": "Happy Farms Sharp Cheddar Block (Aldi)", "category": "Dairy", "location": "Fridge", "quantity": 1, "expDate": "2026-06-21", "opened": false, "notes": "8 oz block"}, {"id": 10, "name": "Bowl & Basket Extra Sharp Cheddar Block", "category": "Dairy", "location": "Fridge", "quantity": 1, "expDate": "2026-07-21", "opened": false, "notes": "8 oz block"}, {"id": 11, "name": "Frigo CheeseHeads String Cheese - Unopened 48-Pack", "category": "Dairy", "location": "Fridge", "quantity": 1, "expDate": "2026-08-02", "opened": false, "notes": "Full sealed bag, 48 count"}, {"id": 12, "name": "Frigo CheeseHeads String Cheese - Individual Sticks", "category": "Dairy", "location": "Fridge", "quantity": 7, "expDate": "2026-07-03", "opened": true, "notes": "From open bag"}, {"id": 13, "name": "Frigo CheeseHeads String Cheese - Individual Sticks", "category": "Dairy", "location": "Fridge", "quantity": 2, "expDate": "2026-05-08", "opened": true, "notes": "From open bag, use soon"}, {"id": 14, "name": "Great Value Finely Shredded Mozzarella", "category": "Dairy", "location": "Fridge", "quantity": 1, "expDate": "2026-08-19", "opened": false, "notes": "1 lb bag, 4 cups"}, {"id": 15, "name": "Claussen Kosher Dill Spears", "category": "Other", "location": "Fridge", "quantity": 1, "expDate": "2026-05-24", "opened": true, "notes": "64 oz jar"}, {"id": 16, "name": "Ortega Original Taco Sauce - Medium", "category": "Other", "location": "Fridge", "quantity": 1, "expDate": "2028-07-28", "opened": true, "notes": "8 oz bottle"}, {"id": 17, "name": "Ortega Original Taco Sauce - Mild", "category": "Other", "location": "Fridge", "quantity": 1, "expDate": "2027-10-14", "opened": true, "notes": "8 oz bottle"}, {"id": 18, "name": "Burman's Dijon Mustard", "category": "Other", "location": "Fridge", "quantity": 1, "expDate": "2026-12-03", "opened": true, "notes": "Aldi brand, squeeze bottle"}, {"id": 19, "name": "Sweet Baby Ray's Original BBQ Sauce", "category": "Other", "location": "Fridge", "quantity": 1, "expDate": "2026-11-11", "opened": true, "notes": "Large bottle"}, {"id": 20, "name": "Hellmann's Mayonnaise", "category": "Other", "location": "Fridge", "quantity": 1, "expDate": "2026-05-06", "opened": true, "notes": "Large jar, well used"}, {"id": 21, "name": "Reggano Grated Parmesan & Romano Cheese", "category": "Dairy", "location": "Fridge", "quantity": 1, "expDate": "2026-11-21", "opened": true, "notes": "8 oz shaker canister"}, {"id": 22, "name": "Goya Sofrito Tomato Cooking Base", "category": "Other", "location": "Fridge", "quantity": 1, "expDate": "2029-10-31", "opened": true, "notes": "12 oz jar"}, {"id": 23, "name": "Polaner All Fruit Spreadable Fruit - Peach", "category": "Other", "location": "Fridge", "quantity": 1, "expDate": "2026-10-01", "opened": false, "notes": "10 oz jar"}, {"id": 24, "name": "Tuscan Garden Sun-Dried Tomatoes Julienne Cut", "category": "Other", "location": "Fridge", "quantity": 1, "expDate": "2028-04-30", "opened": true, "notes": "8 oz jar, with oil and herbs"}, {"id": 25, "name": "Burman's Chicken Dipping Sauce", "category": "Other", "location": "Fridge", "quantity": 1, "expDate": "2027-01-23", "opened": true, "notes": "16 oz bottle, Aldi brand"}, {"id": 26, "name": "Burman's Parmesan Garlic Wing Sauce", "category": "Other", "location": "Fridge", "quantity": 1, "expDate": "2026-06-05", "opened": true, "notes": "12 oz bottle"}, {"id": 27, "name": "Tuscan Garden Chunky Blue Cheese Dressing", "category": "Other", "location": "Fridge", "quantity": 1, "expDate": "2026-07-01", "opened": true, "notes": "Aldi brand"}, {"id": 28, "name": "Sweet Baby Ray's Sweet 'N Spicy BBQ Sauce", "category": "Other", "location": "Fridge", "quantity": 1, "expDate": "2026-10-14", "opened": true, "notes": "Smaller bottle"}, {"id": 29, "name": "Hunt's Ketchup", "category": "Other", "location": "Fridge", "quantity": 1, "expDate": "2027-07-22", "opened": true, "notes": "Squeeze bottle"}, {"id": 30, "name": "Daisy Sour Cream", "category": "Dairy", "location": "Fridge", "quantity": 1, "expDate": "2026-06-23", "opened": true, "notes": "Large tub"}, {"id": 31, "name": "Polaner All Fruit Spreadable Fruit - Concord Grape", "category": "Other", "location": "Fridge", "quantity": 1, "expDate": "2027-10-28", "opened": false, "notes": "10 oz jar"}, {"id": 32, "name": "A.1. Original Steak Sauce", "category": "Other", "location": "Fridge", "quantity": 1, "expDate": "2028-08-03", "opened": true, "notes": "15 oz bottle"}, {"id": 33, "name": "Tuscan Garden Buttermilk Ranch Dressing", "category": "Other", "location": "Fridge", "quantity": 1, "expDate": "2026-10-04", "opened": true, "notes": "Aldi brand"}, {"id": 34, "name": "Stonemill Minced Garlic in Extra Virgin Olive Oil", "category": "Other", "location": "Fridge", "quantity": 1, "expDate": "2027-02-12", "opened": true, "notes": "7 oz jar, Aldi brand"}, {"id": 35, "name": "Great Value Pure Maple Syrup", "category": "Other", "location": "Fridge", "quantity": 1, "expDate": "2027-09-02", "opened": true, "notes": "8 fl oz, refrigerate after opening"}, {"id": 36, "name": "Bowl & Basket Spanish Stuffed Olives with Minced Pimiento", "category": "Other", "location": "Fridge", "quantity": 1, "expDate": "2028-11-07", "opened": true, "notes": "21 oz jar, ShopRite brand"}, {"id": 37, "name": "Land O'Lakes Butter with Canola Oil Spread", "category": "Dairy", "location": "Fridge", "quantity": 1, "expDate": "2026-06-08", "opened": true, "notes": "Soft spread tub, opened"}, {"id": 38, "name": "Philadelphia Strawberry Cream Cheese Spread", "category": "Dairy", "location": "Fridge", "quantity": 1, "expDate": "2026-06-08", "opened": true, "notes": "Tub"}, {"id": 39, "name": "Bowl & Basket Sweet Cream Salted Butter", "category": "Dairy", "location": "Fridge", "quantity": 1, "expDate": "2026-06-11", "opened": false, "notes": "1 lb box, 4 quarters, unopened"}, {"id": 40, "name": "Great Value Mixed Vegetables", "category": "Frozen", "location": "Freezer", "quantity": 1, "expDate": "2028-03-11", "opened": false, "notes": "12 oz bag"}, {"id": 41, "name": "Birds Eye Super Sweet Gold & White Corn", "category": "Frozen", "location": "Freezer", "quantity": 2, "expDate": "2028-02-10", "opened": false, "notes": "Steamfresh bags"}, {"id": 42, "name": "Birds Eye Broccoli, Carrots, Sugar Snap Peas & Water Chestnuts", "category": "Frozen", "location": "Freezer", "quantity": 1, "expDate": "2028-03-03", "opened": false, "notes": "Steamfresh bag"}, {"id": 43, "name": "Birds Eye Sweet Peas", "category": "Frozen", "location": "Freezer", "quantity": 1, "expDate": "2028-02-09", "opened": false, "notes": "Steamfresh bag"}, {"id": 44, "name": "Bowl & Basket Cauliflower Florets", "category": "Frozen", "location": "Freezer", "quantity": 1, "expDate": "2027-03-31", "opened": false, "notes": "Steam-in-bag"}, {"id": 45, "name": "Frozen Chicken Breast (home portioned)", "category": "Meat", "location": "Freezer", "quantity": 4, "expDate": "2026-11-01", "opened": false, "notes": "Ziploc freezer bags, ~20 oz each, frozen approx Feb 2026. Best quality by Nov 2026."}, {"id": 46, "name": "Ground Beef 80/20", "category": "Meat", "location": "Freezer", "quantity": 1, "expDate": "2026-08-17", "opened": false, "notes": "1 lb, store packaging, frozen from 4/17/26. Best quality by Aug 2026."}, {"id": 47, "name": "Bone-In Pork Chops (home portioned)", "category": "Meat", "location": "Freezer", "quantity": 1, "expDate": "2026-10-16", "opened": false, "notes": "Ziploc freezer bag, quantity unknown, freeze date unknown. Est. best by Oct 2026."}, {"id": 48, "name": "Bowl & Basket Sliced Strawberries", "category": "Frozen", "location": "Freezer", "quantity": 1, "expDate": "2027-09-25", "opened": true, "notes": "1 lb bag, ShopRite brand"}, {"id": 49, "name": "Great Value Sliced Strawberries", "category": "Frozen", "location": "Freezer", "quantity": 1, "expDate": "2027-11-18", "opened": false, "notes": "4 lb bag"}, {"id": 50, "name": "Season's Choice Frozen Blueberries", "category": "Frozen", "location": "Freezer", "quantity": 1, "expDate": "2027-02-15", "opened": true, "notes": "Aldi brand, good for smoothies"}, {"id": 51, "name": "Member's Mark Mixed Fruit", "category": "Frozen", "location": "Freezer", "quantity": 2, "expDate": "2027-12-23", "opened": true, "notes": "1 lb pre-portioned bags, pineapple/strawberries/peaches/mangos. 1 of 2 opened."}, {"id": 52, "name": "Eggo Minis Chocolatey Chip Pancakes", "category": "Frozen", "location": "Freezer", "quantity": 9, "expDate": "2027-06-08", "opened": false, "notes": "Individual 1.69 oz heat & go pouches"}, {"id": 53, "name": "Eggo Mini Pancakes - Plain (repackaged)", "category": "Frozen", "location": "Freezer", "quantity": 1, "expDate": "2026-10-01", "opened": true, "notes": "Ziploc bag, repackaged from Eggo box, purchased approx Apr 2026"}, {"id": 54, "name": "Eggo Mini Cinnamon Waffles (repackaged)", "category": "Frozen", "location": "Freezer", "quantity": 1, "expDate": "2026-10-01", "opened": true, "notes": "Ziploc bag with 2 packs of 4, repackaged from Eggo box, purchased approx Apr 2026"}, {"id": 55, "name": "Aldi Specially Selected Stuffed Belgian Waffles", "category": "Frozen", "location": "Freezer", "quantity": 2, "expDate": "2026-10-01", "opened": false, "notes": "Individually wrapped, no exp date visible, purchased approx Apr 2026"}, {"id": 56, "name": "Tyson White Meat Chicken Nuggets", "category": "Frozen", "location": "Freezer", "quantity": 1, "expDate": "2027-02-02", "opened": true, "notes": "5 lb resealable bag, partially used"}, {"id": 57, "name": "Popsicle Tropicals Sugar Free Ice Pops", "category": "Frozen", "location": "Freezer", "quantity": 1, "expDate": "2027-04-01", "opened": true, "notes": "18 ct box, Caribbean Fruit Punch, Tropical Orange, Hawaiian Pineapple"}, {"id": 58, "name": "Bowl & Basket Italian Style Meatballs", "category": "Frozen", "location": "Freezer", "quantity": 1, "expDate": "2027-04-24", "opened": false, "notes": "26 oz bag, fully cooked, ShopRite brand"}, {"id": 59, "name": "Bowl & Basket Cheese Ravioli", "category": "Frozen", "location": "Freezer", "quantity": 1, "expDate": "2028-01-23", "opened": false, "notes": "25 oz bag, filled with ricotta & romano cheeses, ShopRite brand"}, {"id": 60, "name": "Simply Nature Sweet Potato Bites", "category": "Frozen", "location": "Freezer", "quantity": 1, "expDate": "2028-01-22", "opened": true, "notes": "Aldi brand, Non-GMO"}, {"id": 61, "name": "Ellio's Five Cheese Pizza", "category": "Frozen", "location": "Freezer", "quantity": 1, "expDate": "2026-10-19", "opened": true, "notes": "1 slice remaining"}, {"id": 62, "name": "Drumstick Mini Drums Vanilla Ice Cream Cones", "category": "Frozen", "location": "Freezer", "quantity": 1, "expDate": "2026-11-30", "opened": true, "notes": "20 ct box, approx 12 remaining"}, {"id": 63, "name": "Tyson Chicken Patties (repackaged)", "category": "Frozen", "location": "Freezer", "quantity": 1, "expDate": "2026-10-01", "opened": true, "notes": "6 patties remaining in Ziploc, removed from original packaging, est. best by Oct 2026"}, {"id": 64, "name": "Blue Diamond Almond Breeze Hint of Honey Vanilla", "category": "Beverages", "location": "Fridge", "quantity": 1, "expDate": "2026-06-11", "opened": true, "notes": "Half gallon carton"}, {"id": 65, "name": "Lactaid Whole Milk Lactose Free", "category": "Dairy", "location": "Fridge", "quantity": 1, "expDate": "2026-06-19", "opened": true, "notes": "96 fl oz jug"}, {"id": 66, "name": "Great Value 100% Pineapple Juice", "category": "Beverages", "location": "Fridge", "quantity": 1, "expDate": "2026-11-10", "opened": true, "notes": "Large bottle"}, {"id": 67, "name": "Ocean Spray White Cran x Peach", "category": "Beverages", "location": "Fridge", "quantity": 1, "expDate": "2026-09-03", "opened": true, "notes": "64 fl oz bottle"}, {"id": 68, "name": "Kendakids Velvety Vanilla Whole Milk Drink", "category": "Beverages", "location": "Fridge", "quantity": 6, "expDate": "2027-01-09", "opened": false, "notes": "8 fl oz cartons, made with European whole milk, DHA Omega-3"}, {"id": 69, "name": "Eggs (loose)", "category": "Dairy", "location": "Fridge", "quantity": 25, "expDate": "2026-05-20", "opened": true, "notes": "Purchased 4/19/26, removed from 60-count box. Est. best by May 20, 2026."}, {"id": 70, "name": "Happy Harvest Fire Roasted Diced Tomatoes", "category": "Pantry", "location": "Pantry", "quantity": 1, "expDate": "2027-09-01", "opened": false, "notes": "14.5 oz can, Aldi brand"}, {"id": 71, "name": "Hunt's Fire Roasted Diced Tomatoes", "category": "Pantry", "location": "Pantry", "quantity": 1, "expDate": "2026-09-11", "opened": false, "notes": "14.5 oz can"}, {"id": 72, "name": "Tuttorosso Crushed Tomatoes with Basil", "category": "Pantry", "location": "Pantry", "quantity": 2, "expDate": "2027-08-15", "opened": false, "notes": "28 oz cans"}, {"id": 73, "name": "Tuttorosso Tomato Paste with Roasted Garlic", "category": "Pantry", "location": "Pantry", "quantity": 1, "expDate": "2027-05-28", "opened": false, "notes": "6 oz can"}, {"id": 74, "name": "Happy Harvest Tomato Paste", "category": "Pantry", "location": "Pantry", "quantity": 1, "expDate": "2027-09-11", "opened": false, "notes": "6 oz can, Aldi brand"}, {"id": 75, "name": "Goya Tomato Sauce - Spanish Style", "category": "Pantry", "location": "Pantry", "quantity": 5, "expDate": "2028-11-21", "opened": false, "notes": "8 oz cans, qty 5"}, {"id": 76, "name": "Hunt's Tomato Sauce", "category": "Pantry", "location": "Pantry", "quantity": 1, "expDate": "2026-08-03", "opened": false, "notes": "29 oz can"}, {"id": 77, "name": "Tuttorosso Tomato Sauce", "category": "Pantry", "location": "Pantry", "quantity": 1, "expDate": "2027-11-28", "opened": false, "notes": "28 oz can"}, {"id": 78, "name": "Happy Harvest Tomato Sauce", "category": "Pantry", "location": "Pantry", "quantity": 2, "expDate": "2026-10-29", "opened": false, "notes": "8 oz cans, Aldi brand"}, {"id": 79, "name": "Classico Four Cheese Alfredo Pasta Sauce", "category": "Pantry", "location": "Pantry", "quantity": 2, "expDate": "2027-06-11", "opened": false, "notes": "15 oz jars"}, {"id": 80, "name": "Bertolli Vodka Sauce", "category": "Pantry", "location": "Pantry", "quantity": 2, "expDate": "2028-03-13", "opened": false, "notes": "24 oz jars"}, {"id": 81, "name": "Progresso Traditional Chicken Noodle Soup", "category": "Pantry", "location": "Pantry", "quantity": 3, "expDate": "2026-06-19", "opened": false, "notes": "18.5 oz cans"}, {"id": 82, "name": "Progresso Vegetable Classics Green Split Pea with Bacon", "category": "Pantry", "location": "Pantry", "quantity": 2, "expDate": "2027-08-25", "opened": false, "notes": "18.5 oz cans"}, {"id": 83, "name": "Progresso Light Chicken Noodle Soup", "category": "Pantry", "location": "Pantry", "quantity": 3, "expDate": "2026-02-15", "opened": false, "notes": "18.5 oz cans"}, {"id": 84, "name": "Progresso Traditional Broccoli Cheese Soup", "category": "Pantry", "location": "Pantry", "quantity": 1, "expDate": "2027-08-23", "opened": false, "notes": "18.5 oz can"}, {"id": 85, "name": "Campbell's Chunky Pub-Style Chicken Pot Pie", "category": "Pantry", "location": "Pantry", "quantity": 2, "expDate": "2027-07-08", "opened": false, "notes": "18.8 oz cans"}, {"id": 86, "name": "Campbell's Chunky Creamy Chicken & Dumplings", "category": "Pantry", "location": "Pantry", "quantity": 1, "expDate": "2027-07-08", "opened": false, "notes": "18.8 oz can"}, {"id": 87, "name": "Goya Coconut Milk", "category": "Pantry", "location": "Pantry", "quantity": 2, "expDate": "2028-09-16", "opened": false, "notes": "13.5 oz cans"}, {"id": 88, "name": "Jamaican Choice Coconut Milk", "category": "Pantry", "location": "Pantry", "quantity": 1, "expDate": "2028-08-01", "opened": false, "notes": "13.5 oz can"}, {"id": 89, "name": "Campbell's SpaghettiOs Original", "category": "Pantry", "location": "Pantry", "quantity": 1, "expDate": "2027-07-08", "opened": false, "notes": "15.8 oz can"}, {"id": 90, "name": "Campbell's SpaghettiOs Original A to Z's", "category": "Pantry", "location": "Pantry", "quantity": 3, "expDate": "2027-02-25", "opened": false, "notes": "15.8 oz cans"}, {"id": 91, "name": "Libby's Vienna Sausage", "category": "Pantry", "location": "Pantry", "quantity": 2, "expDate": "2028-01-22", "opened": false, "notes": "4.6 oz cans"}, {"id": 92, "name": "Great Value Evaporated Milk", "category": "Pantry", "location": "Pantry", "quantity": 3, "expDate": "2026-07-09", "opened": false, "notes": "12 oz cans"}, {"id": 93, "name": "Bowl & Basket Distilled White Vinegar", "category": "Pantry", "location": "Pantry", "quantity": 1, "expDate": "2026-08-27", "opened": false, "notes": "ShopRite brand"}, {"id": 94, "name": "Great Value Distilled White Vinegar", "category": "Pantry", "location": "Pantry", "quantity": 1, "expDate": "2028-09-01", "opened": false, "notes": "Large bottle"}, {"id": 95, "name": "Ferrara Balsamic Vinegar of Modena", "category": "Pantry", "location": "Pantry", "quantity": 1, "expDate": "2029-10-24", "opened": false, "notes": "8.45 fl oz bottle"}, {"id": 96, "name": "Holland House Red Cooking Wine", "category": "Pantry", "location": "Pantry", "quantity": 1, "expDate": "2027-11-01", "opened": false, "notes": "16 fl oz bottle"}, {"id": 97, "name": "Simply Nature Organic Apple Cider Vinegar", "category": "Pantry", "location": "Pantry", "quantity": 1, "expDate": "2027-07-04", "opened": false, "notes": "Aldi brand, with the mother"}, {"id": 98, "name": "Bowl & Basket Apple Cider Vinegar", "category": "Pantry", "location": "Pantry", "quantity": 1, "expDate": "2027-05-28", "opened": false, "notes": "ShopRite brand"}, {"id": 99, "name": "Burman's All Purpose Soy Sauce", "category": "Pantry", "location": "Pantry", "quantity": 1, "expDate": "2026-07-25", "opened": false, "notes": "Aldi brand"}, {"id": 100, "name": "Great Value Soy Sauce Less Sodium", "category": "Pantry", "location": "Pantry", "quantity": 1, "expDate": "2026-11-26", "opened": false, "notes": "10 fl oz bottle"}, {"id": 101, "name": "Pompeian Extra Virgin Olive Oil Smooth", "category": "Pantry", "location": "Pantry", "quantity": 1, "expDate": "2026-10-01", "opened": true, "notes": "In-use bottle"}, {"id": 102, "name": "Campbell's Condensed Cream of Chicken Soup", "category": "Pantry", "location": "Pantry", "quantity": 5, "expDate": "2028-02-12", "opened": false, "notes": "10.5 oz cans"}, {"id": 103, "name": "Goya Black Beans", "category": "Pantry", "location": "Pantry", "quantity": 1, "expDate": "2030-09-22", "opened": false, "notes": "15.5 oz can"}, {"id": 104, "name": "Carlini Original Canola Oil Spray", "category": "Pantry", "location": "Pantry", "quantity": 1, "expDate": "2026-11-15", "opened": false, "notes": "Aldi brand cooking spray"}, {"id": 105, "name": "Burman's Real Mayonnaise", "category": "Pantry", "location": "Pantry", "quantity": 1, "expDate": "2026-06-01", "opened": false, "notes": "Pantry backup, unopened. Aldi brand."}, {"id": 106, "name": "Kendakids Complete Nutrition Shake - Smooth Strawberry", "category": "Beverages", "location": "Pantry", "quantity": 12, "expDate": "2026-12-04", "opened": false, "notes": "8 fl oz cartons, shelf-stable"}, {"id": 107, "name": "Great Value Parsley Flakes", "category": "Pantry", "location": "Pantry", "quantity": 1, "expDate": "2026-09-23", "opened": false, "notes": "Dried herb shaker"}, {"id": 108, "name": "Great Value Oregano Leaves", "category": "Pantry", "location": "Pantry", "quantity": 1, "expDate": "2026-11-21", "opened": false, "notes": "Dried herb shaker"}, {"id": 109, "name": "Stonemill Iodized Salt", "category": "Pantry", "location": "Pantry", "quantity": 1, "expDate": "2030-05-25", "opened": false, "notes": "Aldi brand, canister"}, {"id": 110, "name": "Great Value Onion Powder", "category": "Pantry", "location": "Pantry", "quantity": 1, "expDate": "2028-10-29", "opened": false, "notes": "Spice shaker"}, {"id": 111, "name": "Frank's RedHot Original", "category": "Pantry", "location": "Pantry", "quantity": 1, "expDate": "2027-03-10", "opened": true, "notes": "Hot sauce bottle, in use"}, {"id": 112, "name": "Chef's Cupboard Vegetable Cooking Stock", "category": "Pantry", "location": "Pantry", "quantity": 1, "expDate": "2027-04-10", "opened": false, "notes": "Aldi brand, carton"}, {"id": 113, "name": "Great Value Chicken Broth", "category": "Pantry", "location": "Pantry", "quantity": 1, "expDate": "2027-02-12", "opened": false, "notes": "32 oz carton"}, {"id": 114, "name": "Nestlé Carnation Evaporated Milk", "category": "Pantry", "location": "Pantry", "quantity": 2, "expDate": "2026-10-22", "opened": false, "notes": "12 fl oz cans"}, {"id": 115, "name": "Hungry Jack Complete Buttermilk Pancake & Waffle Mix", "category": "Pantry", "location": "Pantry", "quantity": 1, "expDate": "2027-02-07", "opened": false, "notes": "Just add water mix"}, {"id": 116, "name": "Kodiak Protein Oatmeal - Maple & Brown Sugar", "category": "Pantry", "location": "Pantry", "quantity": 1, "expDate": "2026-10-05", "opened": false, "notes": "Single-serve packet box"}, {"id": 117, "name": "Kodiak Protein Oatmeal - Apple Cinnamon", "category": "Pantry", "location": "Pantry", "quantity": 1, "expDate": "2026-10-31", "opened": false, "notes": "Single-serve packet box"}, {"id": 118, "name": "Millville Protein Oats & Honey Crunchy Granola", "category": "Pantry", "location": "Pantry", "quantity": 1, "expDate": "2026-10-14", "opened": false, "notes": "Aldi brand, resealable bag"}, {"id": 119, "name": "Oats Overnight Mixed Berries & Cream (batch 1)", "category": "Pantry", "location": "Pantry", "quantity": 1, "expDate": "2026-06-13", "opened": false, "notes": "Single-serve overnight oats pouch"}, {"id": 120, "name": "Oats Overnight Mixed Berries & Cream (batch 2)", "category": "Pantry", "location": "Pantry", "quantity": 4, "expDate": "2026-09-29", "opened": false, "notes": "Single-serve overnight oats pouches"}, {"id": 121, "name": "Terrasoul Superfoods Flax Chia Superseed Blend", "category": "Pantry", "location": "Pantry", "quantity": 1, "expDate": "2026-05-31", "opened": false, "notes": "8 oz bag, cold milled, USDA Organic"}, {"id": 122, "name": "Wholesome Pantry Organic Chia Seeds", "category": "Pantry", "location": "Pantry", "quantity": 1, "expDate": "2026-06-23", "opened": false, "notes": "8 oz bag, ShopRite brand"}, {"id": 123, "name": "Bowl & Basket Pumpkin Spice Instant Oatmeal", "category": "Pantry", "location": "Pantry", "quantity": 22, "expDate": "2027-01-16", "opened": false, "notes": "Individual paper packets"}, {"id": 124, "name": "Kellogg's Rice Krispies", "category": "Pantry", "location": "Pantry", "quantity": 1, "expDate": "2026-10-17", "opened": true, "notes": "9 oz box"}, {"id": 125, "name": "Kellogg's Krave Chocolate", "category": "Pantry", "location": "Pantry", "quantity": 1, "expDate": "2026-12-18", "opened": false, "notes": "17.3 oz box"}, {"id": 126, "name": "Quaker Life Cinnamon", "category": "Pantry", "location": "Pantry", "quantity": 1, "expDate": "2027-02-12", "opened": false, "notes": "Multigrain cereal"}, {"id": 127, "name": "General Mills Honey Nut Cheerios", "category": "Pantry", "location": "Pantry", "quantity": 1, "expDate": "2026-12-01", "opened": true, "notes": "Large box"}, {"id": 128, "name": "Crystal Light Strawberry Orange Banana (pitcher packs)", "category": "Beverages", "location": "Pantry", "quantity": 1, "expDate": "2027-02-11", "opened": true, "notes": "6 pitcher packets, approx 5 remaining"}, {"id": 129, "name": "Crystal Light Zero Sugar Raspberry Lemonade", "category": "Beverages", "location": "Pantry", "quantity": 1, "expDate": "2027-11-30", "opened": false, "notes": "10 individual packets"}, {"id": 130, "name": "Crystal Light Zero Sugar Lemon Iced Tea (box 1)", "category": "Beverages", "location": "Pantry", "quantity": 1, "expDate": "2027-12-29", "opened": true, "notes": "10 individual packets, opened"}, {"id": 131, "name": "Crystal Light Zero Sugar Lemon Iced Tea (box 2)", "category": "Beverages", "location": "Pantry", "quantity": 1, "expDate": "2027-12-29", "opened": false, "notes": "10 individual packets, sealed"}, {"id": 132, "name": "Crystal Light Blueberry Pomegranate Immunity Support", "category": "Beverages", "location": "Pantry", "quantity": 1, "expDate": "2027-09-01", "opened": false, "notes": "10 individual packets"}, {"id": 133, "name": "Crystal Light Energy Boost Raspberry Lemonade", "category": "Beverages", "location": "Pantry", "quantity": 1, "expDate": "2027-07-07", "opened": true, "notes": "10 individual packets, 75mg caffeine"}, {"id": 134, "name": "Crystal Light Lemon Iced Tea (loose packets)", "category": "Beverages", "location": "Pantry", "quantity": 3, "expDate": "2027-12-29", "opened": false, "notes": "Loose individual packets"}, {"id": 135, "name": "Simply Nature Ground Flax Seeds (Aldi)", "category": "Pantry", "location": "Pantry", "quantity": 1, "expDate": "2026-10-20", "opened": false, "notes": "16 oz / 1 lb bag, Non-GMO"}, {"id": 136, "name": "Quaker Protein Granola Bars - Cookies & Cream", "category": "Snacks", "location": "Pantry", "quantity": 1, "expDate": "2027-05-27", "opened": false, "notes": "5-bar box, 10g protein per bar"}, {"id": 137, "name": "Simply Nature Freeze Dried Fuji Apples (Aldi)", "category": "Snacks", "location": "Pantry", "quantity": 1, "expDate": "2027-03-25", "opened": false, "notes": "1.2 oz bag, Non-GMO"}, {"id": 138, "name": "Planters Salted Cashews", "category": "Snacks", "location": "Pantry", "quantity": 2, "expDate": "2026-10-14", "opened": false, "notes": "1.5 oz snack packs"}, {"id": 139, "name": "Planters Honey Roasted Peanuts", "category": "Snacks", "location": "Pantry", "quantity": 1, "expDate": "2026-10-14", "opened": false, "notes": "1.75 oz snack pack"}, {"id": 140, "name": "Ava Organics Organic Coconut Crispy Rollers", "category": "Snacks", "location": "Pantry", "quantity": 1, "expDate": "2027-05-05", "opened": false, "notes": "Original coconut, USDA Organic"}, {"id": 141, "name": "Go Raw Organic Sprouted Pumpkin Seeds", "category": "Snacks", "location": "Pantry", "quantity": 1, "expDate": "2026-07-17", "opened": false, "notes": "Sea salt, 8g protein/serving"}, {"id": 142, "name": "Maier's Premium Italian Bread", "category": "Other", "location": "Counter", "quantity": 2, "expDate": "2026-04-28", "opened": false, "notes": "1 lb 4 oz loaves"}, {"id": 143, "name": "Bamba Peanut Butter Puffs", "category": "Snacks", "location": "Counter", "quantity": 1, "expDate": "2026-07-29", "opened": true, "notes": "Opened/clipped bag, gluten free"}, {"id": 144, "name": "Savoritz Original Clubhouse Crackers (Aldi)", "category": "Snacks", "location": "Pantry", "quantity": 1, "expDate": "2026-06-03", "opened": true, "notes": "13.7 oz box, opened"}, {"id": 145, "name": "Chef Boyardee Mini ABC's & 123's with Meatballs", "category": "Pantry", "location": "Pantry", "quantity": 3, "expDate": "2027-08-19", "opened": false, "notes": "Microcup bowls, 15 oz each"}, {"id": 146, "name": "Chef Boyardee Rice with Chicken & Vegetables", "category": "Pantry", "location": "Pantry", "quantity": 1, "expDate": "2027-08-19", "opened": false, "notes": "Microcup bowl"}, {"id": 147, "name": "Nutty Novelties Cinnamon Almond Butter", "category": "Pantry", "location": "Pantry", "quantity": 1, "expDate": "2026-11-10", "opened": true, "notes": "15 oz jar, freshly ground, low sugar"}, {"id": 148, "name": "Pearl Milling Company Butter Rich Syrup", "category": "Other", "location": "Counter", "quantity": 1, "expDate": "2027-11-07", "opened": true, "notes": "24 fl oz bottle"}, {"id": 149, "name": "Bowl & Basket Specialty Natural Peanut Butter Creamy", "category": "Pantry", "location": "Pantry", "quantity": 1, "expDate": "2026-07-28", "opened": false, "notes": "16 oz jar, stir before use"}, {"id": 150, "name": "Barilla Classic Elbows", "category": "Pantry", "location": "Pantry", "quantity": 1, "expDate": "2028-09-01", "opened": false, "notes": "1 lb box"}, {"id": 151, "name": "Barilla Classic Ziti", "category": "Pantry", "location": "Pantry", "quantity": 1, "expDate": "2028-04-01", "opened": false, "notes": "1 lb box"}, {"id": 152, "name": "Reggano Elbow Macaroni", "category": "Pantry", "location": "Pantry", "quantity": 1, "expDate": "2027-10-31", "opened": false, "notes": "2 lb family size box, Aldi brand"}, {"id": 153, "name": "Ronzoni Orzo No. 47", "category": "Pantry", "location": "Pantry", "quantity": 1, "expDate": "2026-10-12", "opened": false, "notes": "1 lb box"}, {"id": 154, "name": "Bowl & Basket Original Macaroni & Cheese", "category": "Pantry", "location": "Pantry", "quantity": 1, "expDate": "2027-01-29", "opened": false, "notes": "ShopRite brand box"}, {"id": 155, "name": "Cheese Club Macaroni & Cheese", "category": "Pantry", "location": "Pantry", "quantity": 1, "expDate": "2027-06-02", "opened": false, "notes": "Aldi brand box"}, {"id": 156, "name": "Millville Mac & Cheese Made with Chickpea Pasta (batch 1)", "category": "Pantry", "location": "Pantry", "quantity": 1, "expDate": "2026-07-03", "opened": false, "notes": "Aldi brand, orange box"}, {"id": 157, "name": "Millville Mac & Cheese Made with Chickpea Pasta (batch 2)", "category": "Pantry", "location": "Pantry", "quantity": 1, "expDate": "2026-10-08", "opened": false, "notes": "Aldi brand, orange box"}, {"id": 158, "name": "Campbell's SpaghettiOs Original A to Z's (extra can)", "category": "Pantry", "location": "Pantry", "quantity": 1, "expDate": "2027-08-08", "opened": false, "notes": "15.8 oz can"}, {"id": 159, "name": "Ortega Original Mild Taco Sauce", "category": "Pantry", "location": "Pantry", "quantity": 1, "expDate": "2027-12-16", "opened": false, "notes": "16 oz bottle"}, {"id": 160, "name": "Ortega Original Taco Seasoning Mix", "category": "Pantry", "location": "Pantry", "quantity": 1, "expDate": "2026-12-26", "opened": false, "notes": "Single seasoning packet"}, {"id": 161, "name": "StarKist Solid White Albacore Tuna in Water", "category": "Pantry", "location": "Pantry", "quantity": 1, "expDate": "2028-08-27", "opened": false, "notes": "5 oz can, wild caught"}, {"id": 162, "name": "StarKist Light Tuna in Water Pouches", "category": "Pantry", "location": "Pantry", "quantity": 5, "expDate": "2028-10-24", "opened": false, "notes": "2.6 oz Flavor Fresh pouches"}, {"id": 163, "name": "Idahoan Four Cheese Mashed Potatoes", "category": "Pantry", "location": "Pantry", "quantity": 1, "expDate": "2026-10-07", "opened": false, "notes": "Single-serve pouch, gluten free"}, {"id": 164, "name": "Idahoan Loaded Baked Mashed Potatoes", "category": "Pantry", "location": "Pantry", "quantity": 1, "expDate": "2026-11-16", "opened": false, "notes": "Single-serve pouch, gluten free"}, {"id": 165, "name": "Kraft Mac & Cheese Original Flavor Microcups", "category": "Pantry", "location": "Pantry", "quantity": 2, "expDate": "2026-07-15", "opened": false, "notes": "2.05 oz microcups"}, {"id": 166, "name": "Smucker's Magic Shell Chocolate Fudge", "category": "Pantry", "location": "Pantry", "quantity": 1, "expDate": "2027-09-23", "opened": false, "notes": "7.25 oz bottle, do not refrigerate"}, {"id": 167, "name": "Bowl & Basket Medium Egg Noodles", "category": "Pantry", "location": "Pantry", "quantity": 1, "expDate": "2027-06-03", "opened": false, "notes": "ShopRite brand"}, {"id": 168, "name": "Goya Yellow Rice Spanish Style", "category": "Pantry", "location": "Pantry", "quantity": 1, "expDate": "", "opened": false, "notes": "Multi-pack box, 3 packs inside. Exp date not located."}, {"id": 169, "name": "Great Value Long Grain Enriched Rice", "category": "Pantry", "location": "Pantry", "quantity": 1, "expDate": "2027-10-24", "opened": false, "notes": "5 lb bag"}, {"id": 170, "name": "Baker's Corner Premium Granulated Sugar (Aldi)", "category": "Pantry", "location": "Pantry", "quantity": 1, "expDate": "2027-12-07", "opened": false, "notes": "4 lb bag"}, {"id": 171, "name": "Bowl & Basket Bleached Enriched All Purpose Flour", "category": "Pantry", "location": "Pantry", "quantity": 1, "expDate": "2026-11-06", "opened": false, "notes": "ShopRite brand, pre-sifted"}, {"id": 172, "name": "Bowl & Basket Light Brown Sugar", "category": "Pantry", "location": "Pantry", "quantity": 1, "expDate": "2028-02-01", "opened": false, "notes": "ShopRite brand bag"}, {"id": 173, "name": "Baker's Corner Light Brown Sugar (Aldi)", "category": "Pantry", "location": "Pantry", "quantity": 1, "expDate": "2027-02-06", "opened": true, "notes": "Opened bag"}, {"id": 174, "name": "Baker's Corner Classic Yellow Cake Mix (Aldi)", "category": "Pantry", "location": "Pantry", "quantity": 1, "expDate": "2026-07-28", "opened": false, "notes": "Standard box"}, {"id": 175, "name": "Baker's Corner 100% Pure Corn Starch (Aldi)", "category": "Pantry", "location": "Pantry", "quantity": 1, "expDate": "2027-10-30", "opened": false, "notes": "Standard box"}, {"id": 176, "name": "Baking Decorating Supplies (group)", "category": "Pantry", "location": "Pantry", "quantity": 1, "expDate": "", "opened": false, "notes": "Betty Crocker Red Decorating Icing, rainbow sprinkles, sprinkle shakers, glitter gel, food color tubes."}, {"id": 177, "name": "Great Value Cookie Icing Red", "category": "Pantry", "location": "Pantry", "quantity": 1, "expDate": "2027-10-17", "opened": false, "notes": "7 oz pouch"}, {"id": 178, "name": "Great Value Organic Raw Honey", "category": "Pantry", "location": "Pantry", "quantity": 1, "expDate": "2026-11-04", "opened": true, "notes": "12 oz bottle, USDA Organic"}, {"id": 179, "name": "McCormick Pure Vanilla Extract", "category": "Pantry", "location": "Pantry", "quantity": 1, "expDate": "", "opened": false, "notes": "2 fl oz bottle. Exp date not visible."}, {"id": 180, "name": "Bowl & Basket Cinnamon Sugar", "category": "Pantry", "location": "Pantry", "quantity": 1, "expDate": "2028-10-17", "opened": false, "notes": "3.5 oz shaker, ShopRite brand"}, {"id": 181, "name": "Del Monte Diced Peaches Fruit Cup Snacks", "category": "Pantry", "location": "Pantry", "quantity": 12, "expDate": "2027-09-01", "opened": false, "notes": "4 oz cups in 100% juice, family pack of 12"}, {"id": 182, "name": "Entenmann's Little Bites Chocolatey Chip Muffins (multi-pack)", "category": "Snacks", "location": "Pantry", "quantity": 2, "expDate": "2026-05-24", "opened": false, "notes": "Full-size multi-pouch bags"}, {"id": 183, "name": "Entenmann's Little Bites Chocolatey Chip Muffins (individual pouches)", "category": "Snacks", "location": "Pantry", "quantity": 12, "expDate": "2026-05-31", "opened": false, "notes": "1.5 oz individual pouches, loose"}, {"id": 184, "name": "Millville Kids Fruit & Grain Apple-Icous Mini Bars (batch 1)", "category": "Snacks", "location": "Pantry", "quantity": 14, "expDate": "2026-11-30", "opened": false, "notes": "1.3 oz individual pouches, Aldi brand"}, {"id": 185, "name": "Millville Kids Fruit & Grain Apple-Icous Mini Bars (batch 2)", "category": "Snacks", "location": "Pantry", "quantity": 2, "expDate": "2026-10-30", "opened": false, "notes": "1.3 oz individual pouches, Aldi brand, earlier date"}, {"id": 186, "name": "Lumas Squeezable Cinnamon Apple Fruit Blend (Aldi)", "category": "Snacks", "location": "Pantry", "quantity": 3, "expDate": "2027-02-20", "opened": false, "notes": "3.2 oz pouches, Non-GMO, Aldi brand"}, {"id": 187, "name": "Mott's No Sugar Added Applesauce - Cinnamon", "category": "Snacks", "location": "Pantry", "quantity": 1, "expDate": "2026-05-11", "opened": false, "notes": "3.2 oz squeeze pouch, gluten free"}, {"id": 188, "name": "Benton's Mini Chocolate Chip Cookies", "category": "Snacks", "location": "Pantry", "quantity": 1, "expDate": "2027-01-07", "opened": false, "notes": "1 oz pouch, blue bag, nut-free facility, Aldi brand"}, {"id": 189, "name": "Benton's Mini Chewy Chocolate Chip Cookies", "category": "Snacks", "location": "Pantry", "quantity": 4, "expDate": "2027-01-10", "opened": false, "notes": "1 oz pouches, red bag, nut-free facility, Aldi brand"}, {"id": 190, "name": "Savoritz Mini Peanut Butter Sandwich Crackers (loose - use soon)", "category": "Snacks", "location": "Pantry", "quantity": 1, "expDate": "2026-04-27", "opened": false, "notes": "1 oz pouch, Aldi brand"}, {"id": 191, "name": "Savoritz Mini Peanut Butter Sandwich Crackers (loose)", "category": "Snacks", "location": "Pantry", "quantity": 10, "expDate": "2026-08-30", "opened": false, "notes": "1 oz pouches, Aldi brand, loose from box"}, {"id": 192, "name": "Savoritz Mini Peanut Butter Sandwich Crackers (box)", "category": "Snacks", "location": "Pantry", "quantity": 1, "expDate": "2026-08-30", "opened": false, "notes": "12-count box, 1 oz pouches, Aldi brand"}, {"id": 193, "name": "Millville Fruit & Grain Blueberry Soft Baked Bar (exp Sep)", "category": "Snacks", "location": "Pantry", "quantity": 2, "expDate": "2026-09-30", "opened": false, "notes": "Box of bars, Aldi brand"}, {"id": 194, "name": "Millville Fruit & Grain Blueberry Soft Baked Bar (exp Dec)", "category": "Snacks", "location": "Pantry", "quantity": 1, "expDate": "2026-12-30", "opened": false, "notes": "Box of bars, Aldi brand"}, {"id": 195, "name": "Millville Fruit & Grain Apple Cinnamon Soft Baked Bar", "category": "Snacks", "location": "Pantry", "quantity": 1, "expDate": "2026-12-30", "opened": false, "notes": "Box of bars, Aldi brand"}, {"id": 196, "name": "Pepperidge Farm Goldfish Zesty Ranch", "category": "Snacks", "location": "Pantry", "quantity": 1, "expDate": "2026-05-03", "opened": false, "notes": "6.6 oz bag"}, {"id": 197, "name": "Pepperidge Farm Goldfish Colors Cheddar", "category": "Snacks", "location": "Pantry", "quantity": 1, "expDate": "2026-06-28", "opened": false, "notes": "6.6 oz bag, colors sourced from plants"}, {"id": 198, "name": "Mott's Soft Baked Bars - Banana Streusel", "category": "Snacks", "location": "Pantry", "quantity": 2, "expDate": "2026-06-27", "opened": false, "notes": "0.96 oz individual bars, made with applesauce"}, {"id": 199, "name": "Mott's Soft Baked Bars - Chocolate Chip", "category": "Snacks", "location": "Pantry", "quantity": 2, "expDate": "2026-08-22", "opened": false, "notes": "0.96 oz individual bars, made with applesauce"}, {"id": 201, "name": "Lactaid Whole Milk Lactose Free (new jug)", "category": "Dairy", "location": "Fridge", "quantity": 1, "expDate": "2026-06-22", "opened": false, "notes": "96 fl oz jug, new purchase"}, {"id": 202, "name": "Blue Diamond Almond Breeze Hint of Honey Vanilla (carton 1)", "category": "Beverages", "location": "Fridge", "quantity": 1, "expDate": "2026-06-11", "opened": false, "notes": "Half gallon, unopened"}, {"id": 203, "name": "Blue Diamond Almond Breeze Hint of Honey Vanilla (carton 2)", "category": "Beverages", "location": "Fridge", "quantity": 1, "expDate": "2026-06-25", "opened": false, "notes": "Half gallon, unopened"}, {"id": 204, "name": "Nestle Coffee-mate Hazelnut Liquid Creamer", "category": "Dairy", "location": "Fridge", "quantity": 1, "expDate": "2026-10-02", "opened": false, "notes": "32 fl oz bottle"}, {"id": 205, "name": "Nestle Coffee-mate Kit Kat Liquid Creamer", "category": "Dairy", "location": "Fridge", "quantity": 1, "expDate": "2026-06-20", "opened": false, "notes": "32 fl oz bottle, artificial flavors"}, {"id": 206, "name": "Wholesome Pantry Ground Chicken 92% Lean", "category": "Meat", "location": "Fridge", "quantity": 1, "expDate": "2026-04-20", "opened": false, "notes": "1 lb, fresh, no antibiotics, purchased 4/18/26"}, {"id": 207, "name": "Philadelphia Original Cream Cheese", "category": "Dairy", "location": "Fridge", "quantity": 2, "expDate": "2026-04-22", "opened": false, "notes": "Two boxes, use very soon"}, {"id": 208, "name": "Chobani Flip Greek Yogurt - Chocolate Haze Craze", "category": "Dairy", "location": "Fridge", "quantity": 5, "expDate": "2026-05-25", "opened": false, "notes": "4.5 oz flip cups"}, {"id": 209, "name": "Chobani Flip Greek Yogurt - Cinnamon French Toast", "category": "Dairy", "location": "Fridge", "quantity": 5, "expDate": "2026-05-22", "opened": false, "notes": "4.5 oz flip cups, maple flavored with cinnamon rice crisps"}, {"id": 210, "name": "Amoroso's Club Rolls", "category": "Other", "location": "Counter", "quantity": 1, "expDate": "2026-04-27", "opened": false, "notes": "8-count, 16 oz bag, sliced"}, {"id": 211, "name": "Chiquita Bananas", "category": "Produce", "location": "Counter", "quantity": 5, "expDate": "2026-04-25", "opened": false, "notes": "Fresh bunch"}, {"id": 212, "name": "Thomas' Swirl Cinnamon Raisin Bread", "category": "Other", "location": "Counter", "quantity": 1, "expDate": "2026-04-28", "opened": true, "notes": "16 oz loaf, no HFCS, opened"}, {"id": 213, "name": "Tanimura & Antle Iceberg Lettuce", "category": "Produce", "location": "Fridge", "quantity": 1, "expDate": "2026-04-26", "opened": false, "notes": "1 head, wrapped"}, {"id": 214, "name": "Tomatoes (loose, bagged)", "category": "Produce", "location": "Counter", "quantity": 2, "expDate": "2026-04-30", "opened": false, "notes": "2 tomatoes in produce bag"}, {"id": 215, "name": "Herr's Honey BBQ Potato Chips", "category": "Snacks", "location": "Pantry", "quantity": 1, "expDate": "2026-07-08", "opened": false, "notes": "7.75 oz bag, gluten free, ridged"}, {"id": 216, "name": "Herr's Salt & Vinegar Potato Chips", "category": "Snacks", "location": "Pantry", "quantity": 1, "expDate": "2026-06-29", "opened": false, "notes": "7.75 oz bag, gluten free"}, {"id": 217, "name": "Herr's Sour Cream & French Onion Potato Chips", "category": "Snacks", "location": "Pantry", "quantity": 1, "expDate": "2026-06-15", "opened": false, "notes": "7.75 oz bag, gluten free, new flavor"}, {"id": 218, "name": "Stonyfield Organic Yogurt Pouches - Pear Spinach Mango (new)", "category": "Dairy", "location": "Fridge", "quantity": 4, "expDate": "2026-05-24", "opened": false, "notes": "3.5 oz pouches, 4-pack"}, {"id": 219, "name": "Stonyfield Organic Yogurt Cups - Strawberry Vanilla & Blueberry (new)", "category": "Dairy", "location": "Fridge", "quantity": 1, "expDate": "2026-05-17", "opened": false, "notes": "6-pack multipack, 4 oz cups"}, {"id": 220, "name": "Mott's for Tots Apple Juice Drink - Reduced Sugar", "category": "Beverages", "location": "Fridge", "quantity": 1, "expDate": "2026-11-30", "opened": false, "notes": "64 fl oz bottle, 40% less sugar than apple juice"}, {"id": 221, "name": "Ocean Spray Ruby Red 100% Juice", "category": "Beverages", "location": "Fridge", "quantity": 1, "expDate": "2026-08-24", "opened": false, "notes": "60 fl oz bottle, ruby red grapefruit blend"}, {"id": 222, "name": "Bowl & Basket Honeycrisp Apples", "category": "Produce", "location": "Fridge", "quantity": 1, "expDate": "2026-05-02", "opened": false, "notes": "2 lb bag, ShopRite brand"}, {"id": 223, "name": "Thomas' English Muffins", "category": "Other", "location": "Counter", "quantity": 1, "expDate": "2026-04-26", "opened": false, "notes": "6-count bag, use very soon"}, {"id": 224, "name": "Season's Choice Bananas Covered in Dark Chocolate & Peanut Butter", "category": "Frozen", "location": "Freezer", "quantity": 2, "expDate": "2027-04-21", "opened": false, "notes": "Aldi brand"}, {"id": 225, "name": "Season's Choice Strawberries Covered in Dark Chocolate", "category": "Frozen", "location": "Freezer", "quantity": 1, "expDate": "2027-04-21", "opened": false, "notes": "Aldi brand"}, {"id": 226, "name": "Season's Choice Hash Brown Patties", "category": "Frozen", "location": "Freezer", "quantity": 1, "expDate": "2028-03-28", "opened": false, "notes": "20-count box, Aldi brand"}, {"id": 227, "name": "Appétitos Mac & Cheese Bites (box 1)", "category": "Frozen", "location": "Freezer", "quantity": 1, "expDate": "2027-07-28", "opened": false, "notes": "Aldi brand"}, {"id": 228, "name": "Appétitos Mac & Cheese Bites (box 2)", "category": "Frozen", "location": "Freezer", "quantity": 1, "expDate": "2027-06-01", "opened": false, "notes": "Aldi brand"}, {"id": 229, "name": "Breakfast Best Stuffed Blueberry Pancakes", "category": "Frozen", "location": "Freezer", "quantity": 1, "expDate": "2027-01-28", "opened": false, "notes": "Aldi brand"}, {"id": 230, "name": "Breakfast Best Chocolate Chip Pancakes", "category": "Frozen", "location": "Freezer", "quantity": 1, "expDate": "2027-09-02", "opened": false, "notes": "Aldi brand"}, {"id": 231, "name": "M&M's Peanut Butter Ice Cream Bars", "category": "Frozen", "location": "Freezer", "quantity": 1, "expDate": "2027-01-31", "opened": false, "notes": "Box"}, {"id": 232, "name": "Snickers Ice Cream Bars", "category": "Frozen", "location": "Freezer", "quantity": 1, "expDate": "2028-02-28", "opened": false, "notes": "Box"}, {"id": 233, "name": "Friendly Farms Heavy Whipping Cream", "category": "Dairy", "location": "Fridge", "quantity": 2, "expDate": "2026-07-05", "opened": false, "notes": "Aldi brand, 2 cartons"}, {"id": 234, "name": "Wholesome Pantry Hardwood Smoked Bacon", "category": "Meat", "location": "Fridge", "quantity": 1, "expDate": "2026-07-16", "opened": false, "notes": "16 oz, ShopRite brand"}, {"id": 235, "name": "Happy Farms Mild Shredded Cheddar", "category": "Dairy", "location": "Fridge", "quantity": 1, "expDate": "2026-08-29", "opened": false, "notes": "16 oz bag, Aldi brand"}, {"id": 236, "name": "Happy Farms Singles American Cheese", "category": "Dairy", "location": "Fridge", "quantity": 1, "expDate": "2026-10-26", "opened": false, "notes": "16 slices, 12 oz, Aldi brand"}, {"id": 237, "name": "Orange Juice", "category": "Beverages", "location": "Fridge", "quantity": 1, "expDate": "2026-07-07", "opened": false, "notes": "Aldi brand"}, {"id": 238, "name": "Bake House Cookie Dough Core - Fudge", "category": "Other", "location": "Fridge", "quantity": 1, "expDate": "2027-03-13", "opened": false, "notes": "Aldi brand, ready to eat"}, {"id": 239, "name": "Nancy's Organic Greek Yogurt", "category": "Dairy", "location": "Fridge", "quantity": 1, "expDate": "2026-05-08", "opened": false, "notes": "Organic, Aldi brand"}, {"id": 240, "name": "Reggano Angel Hair Pasta", "category": "Pantry", "location": "Pantry", "quantity": 1, "expDate": "2028-03-24", "opened": false, "notes": "2 lb family size box, Aldi brand"}, {"id": 241, "name": "Reggano Fettuccine Pasta", "category": "Pantry", "location": "Pantry", "quantity": 1, "expDate": "2028-03-26", "opened": false, "notes": "2 lb family size box, Aldi brand"}, {"id": 242, "name": "Reggano Grated Parmesan & Romano Cheese (backup)", "category": "Dairy", "location": "Fridge", "quantity": 1, "expDate": "2026-12-19", "opened": false, "notes": "8 oz canister, Aldi brand"}, {"id": 243, "name": "Burman's Yellow Mustard", "category": "Other", "location": "Fridge", "quantity": 1, "expDate": "2027-09-22", "opened": false, "notes": "Aldi brand, squeeze bottle"}, {"id": 244, "name": "Specially Selected Jalapeño Stuffed Olives", "category": "Other", "location": "Fridge", "quantity": 1, "expDate": "2028-03-12", "opened": false, "notes": "7 oz jar, Aldi brand"}, {"id": 245, "name": "Specially Selected Blue Cheese Stuffed Olives", "category": "Other", "location": "Fridge", "quantity": 1, "expDate": "2028-03-26", "opened": false, "notes": "12 oz jar, Aldi brand"}, {"id": 246, "name": "Cheese Club Macaroni & Cheese (new batch)", "category": "Pantry", "location": "Pantry", "quantity": 2, "expDate": "2027-09-10", "opened": false, "notes": "Aldi brand boxes"}, {"id": 247, "name": "Millville Kids Fruit & Grain Strawberry Soft Baked Bars", "category": "Snacks", "location": "Pantry", "quantity": 1, "expDate": "2026-12-30", "opened": false, "notes": "Box, Aldi brand"}, {"id": 248, "name": "Millville Kids Fruit & Grain Apple-Icous Soft Baked Bars", "category": "Snacks", "location": "Pantry", "quantity": 1, "expDate": "2027-01-30", "opened": false, "notes": "Box, Aldi brand"}, {"id": 249, "name": "Benton's Mini Chocolate Chip Cookies 12-Pack Box", "category": "Snacks", "location": "Pantry", "quantity": 1, "expDate": "2027-02-19", "opened": false, "notes": "12 individual 1 oz pouches, Aldi brand"}, {"id": 250, "name": "Southern Grove On The Go Sweet Nut Packs", "category": "Snacks", "location": "Pantry", "quantity": 1, "expDate": "2027-01-19", "opened": false, "notes": "12-count: 4 Milk Choc Cashews, 4 Honey Roasted Peanuts, 4 Himalayan Dark Choc Almonds, Aldi brand"}, {"id": 251, "name": "Lumas Squeezable Apple Cinnamon Fruit Blend", "category": "Snacks", "location": "Pantry", "quantity": 12, "expDate": "2027-02-20", "opened": false, "notes": "Individual pouches, Aldi brand"}, {"id": 252, "name": "Clancy's Cheese Puffs", "category": "Snacks", "location": "Pantry", "quantity": 1, "expDate": "2026-08-05", "opened": false, "notes": "Aldi brand"}, {"id": 253, "name": "Clancy's Puffed Corn Buttery", "category": "Snacks", "location": "Pantry", "quantity": 1, "expDate": "2026-09-09", "opened": false, "notes": "Aldi brand"}, {"id": 254, "name": "Lunch Buddies Mandarin Oranges", "category": "Pantry", "location": "Pantry", "quantity": 2, "expDate": "2026-12-18", "opened": false, "notes": "4-pack cups in 100% fruit juice, 4 oz each per box"}, {"id": 255, "name": "Baker's Corner Milk Chocolate Chips", "category": "Pantry", "location": "Pantry", "quantity": 1, "expDate": "2027-08-04", "opened": false, "notes": "Aldi brand, baking chips"}, {"id": 256, "name": "Baker's Corner Semi Sweet Chocolate Chips", "category": "Pantry", "location": "Pantry", "quantity": 1, "expDate": "2028-02-06", "opened": false, "notes": "Aldi brand, baking chips"}, {"id": 257, "name": "Mission Flour Tortillas", "category": "Other", "location": "Pantry", "quantity": 1, "expDate": "2026-06-02", "opened": false, "notes": "Soft, fajita size"}, {"id": 258, "name": "Chef's Cupboard Italian Style Bread Crumbs Panko", "category": "Pantry", "location": "Pantry", "quantity": 1, "expDate": "2028-03-12", "opened": false, "notes": "8 oz canister, Aldi brand"}, {"id": 259, "name": "Aldi Loven Fresh Cinnamon Raisin Bread", "category": "Other", "location": "Counter", "quantity": 1, "expDate": "2026-04-28", "opened": false, "notes": "Use very soon"}, {"id": 260, "name": "Grimmway Farms Carrots", "category": "Produce", "location": "Fridge", "quantity": 1, "expDate": "2026-05-19", "opened": false, "notes": "2 lb bag"}, {"id": 261, "name": "Russet Potatoes", "category": "Produce", "location": "Counter", "quantity": 1, "expDate": "2026-05-19", "opened": false, "notes": "5 lb bag"}, {"id": 262, "name": "Green Bell Peppers", "category": "Produce", "location": "Fridge", "quantity": 3, "expDate": "2026-04-30", "opened": false, "notes": "Fresh"}, {"id": 263, "name": "Zucchini", "category": "Produce", "location": "Fridge", "quantity": 2, "expDate": "2026-04-29", "opened": false, "notes": "Fresh"}, {"id": 264, "name": "Cucumbers", "category": "Produce", "location": "Fridge", "quantity": 2, "expDate": "2026-04-29", "opened": false, "notes": "Fresh"}, {"id": 265, "name": "Little Salad Bar Spinach", "category": "Produce", "location": "Fridge", "quantity": 1, "expDate": "2026-05-01", "opened": false, "notes": "8 oz bag, Aldi brand"}, {"id": 266, "name": "Bland Farms Premium Sweet Onions", "category": "Produce", "location": "Counter", "quantity": 4, "expDate": "2026-05-19", "opened": false, "notes": "Yellow mesh bag"}, {"id": 267, "name": "Red Onions", "category": "Produce", "location": "Counter", "quantity": 6, "expDate": "2026-05-19", "opened": false, "notes": "Red mesh bag"}, {"id": 268, "name": "Garlic Bulbs", "category": "Produce", "location": "Counter", "quantity": 3, "expDate": "2026-06-19", "opened": false, "notes": "Fresh bulbs"}];
+const CATEGORIES = ["All","Dairy","Produce","Meat","Frozen","Pantry","Beverages","Snacks","Other"];
+const LOCATIONS = ["Fridge","Freezer","Pantry","Counter"];
+const STORAGE_KEY = "pantry_items_v26_clean_full";
+const NEXTID_KEY = "pantry_nextid_v26_clean_full";
+const SHOPPING_KEY = "pantry_shopping_v26_clean_full";
+let items = loadItems();
+let shoppingList = loadShopping();
+let nextId = Number(localStorage.getItem(NEXTID_KEY)) || Math.max(...INITIAL_ITEMS.map(i => i.id || 0)) + 1;
+let activeTab = "inventory";
+let editingId = null;
+let form = emptyForm();
+let codeReader = null;
+
+function emptyForm(){return {name:"",category:"Dairy",location:"Fridge",quantity:1,expDate:"",opened:false,notes:""}}
+function loadItems(){try{const saved=JSON.parse(localStorage.getItem(STORAGE_KEY)||"null");if(Array.isArray(saved)&&saved.length)return ensureAddedDates(saved)}catch(e){}return ensureAddedDates(INITIAL_ITEMS)}
+function loadShopping(){try{const saved=JSON.parse(localStorage.getItem(SHOPPING_KEY)||"[]");return Array.isArray(saved)?saved:[]}catch(e){return []}}
+function ensureAddedDates(list){return list.map(item=>item.addedAt?item:{...item,addedAt:""})}
+function saveAll(){localStorage.setItem(STORAGE_KEY,JSON.stringify(items));localStorage.setItem(SHOPPING_KEY,JSON.stringify(shoppingList));localStorage.setItem(NEXTID_KEY,String(nextId))}
+function escapeHtml(v){return String(v??"").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[ch]))}
+function getDaysUntilExp(dateStr){if(!dateStr)return 9999;const today=new Date();today.setHours(0,0,0,0);const exp=new Date(dateStr+"T12:00:00");exp.setHours(0,0,0,0);return Math.round((exp-today)/86400000)}
+function formatNiceDate(dateStr){if(!dateStr)return"No date";return new Date(dateStr+"T12:00:00").toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"})}
+function expiryBadge(dateStr){if(!dateStr)return'<span class="badge" style="background:#f3f4f6;color:#6b7280;border:1px solid #d1d5db">No date</span>';const d=getDaysUntilExp(dateStr);let bg="#dcfce7",color="#166534",border="#86efac",label=d+"d left";if(d<0){bg="#fee2e2";color="#991b1b";border="#fca5a5";label="Expired "+Math.abs(d)+"d ago"}else if(d<=3){bg="#ffedd5";color="#9a3412";border="#fdba74"}else if(d<=7){bg="#fef9c3";color="#713f12";border="#fde68a"}return `<span class="badge" style="background:${bg};color:${color};border:1px solid ${border}">${label}</span>`}
+function normalizeName(name){return String(name||"").toLowerCase().replace(/[–—]/g,"-").replace(/\s*\([^)]*\)\s*/g," ").replace(/\b(new|backup|extra|unopened|opened|individual|loose|batch|carton|box|sticks|pouches|cups|exp|use soon)\b/g," ").replace(/\s+/g," ").trim()}
+function groupKey(item){return `${normalizeName(item.name)}|${item.category}|${item.location}`}
+function getGrouped(list){const map=new Map();list.forEach(item=>{const key=groupKey(item);if(!map.has(key))map.set(key,{key,name:item.name,category:item.category,location:item.location,totalQuantity:0,entries:[]});const group=map.get(key);group.totalQuantity+=Number(item.quantity||0);group.entries.push(item)});return Array.from(map.values()).map(group=>{group.entries.sort((a,b)=>{const da=a.expDate?new Date(a.expDate+"T12:00:00"):new Date("2099-01-01");const db=b.expDate?new Date(b.expDate+"T12:00:00"):new Date("2099-01-01");return da-db});group.earliestExpDate=(group.entries.find(e=>e.expDate)||{}).expDate||"";return group})}
+function getFilteredItems(){const search=document.getElementById("searchInput").value.toLowerCase();const cat=document.getElementById("categoryFilter").value;const loc=document.getElementById("locationFilter").value;return items.filter(i=>cat==="All"||i.category===cat).filter(i=>loc==="All"||i.location===loc).filter(i=>i.name.toLowerCase().includes(search)||String(i.notes||"").toLowerCase().includes(search))}
+function render(){saveAll();renderSummary();renderTabs();renderForm();activeTab==="inventory"?renderInventory():renderShopping()}
+function renderSummary(){const expiring=items.filter(i=>{const d=getDaysUntilExp(i.expDate);return d>=0&&d<=5}).length;const expired=items.filter(i=>i.expDate&&getDaysUntilExp(i.expDate)<0).length;document.getElementById("subtitle").innerHTML=`${items.length} entries tracked`+(expiring?` <span class="badge" style="background:#fef3c7;color:#92400e">⚡ ${expiring} expiring soon</span>`:"")+(expired?` <span class="badge" style="background:#fee2e2;color:#991b1b">❌ ${expired} expired</span>`:"");document.getElementById("totalEntries").textContent=items.length;document.getElementById("groupedCount").textContent=getGrouped(items).length;document.getElementById("expiringCount").textContent=expiring;document.getElementById("shoppingCount").textContent=shoppingList.length}
+function renderTabs(){document.getElementById("inventorySection").classList.toggle("hidden",activeTab!=="inventory");document.getElementById("shoppingSection").classList.toggle("hidden",activeTab!=="shopping");document.getElementById("inventoryTab").classList.toggle("active",activeTab==="inventory");document.getElementById("shoppingTab").classList.toggle("active",activeTab==="shopping");document.getElementById("shoppingTab").innerHTML=`🛒 Shopping List${shoppingList.length?" ("+shoppingList.length+")":""}`}
+function renderForm(){document.getElementById("formArea").innerHTML=`<div class="form-grid"><div class="full"><label>Item Name</label><input id="fName" value="${escapeHtml(form.name)}" placeholder="e.g. Greek Yogurt - Vanilla" /></div><div><label>Category</label><select id="fCategory">${CATEGORIES.filter(c=>c!=="All").map(c=>`<option ${form.category===c?"selected":""}>${c}</option>`).join("")}</select></div><div><label>Location</label><select id="fLocation">${LOCATIONS.map(l=>`<option ${form.location===l?"selected":""}>${l}</option>`).join("")}</select></div><div><label>Quantity</label><input id="fQuantity" type="number" min="0" value="${Number(form.quantity||0)}" /></div><div><label>Expiration Date</label><input id="fExp" type="date" value="${escapeHtml(form.expDate||"")}" /></div><div class="full"><label>Notes</label><input id="fNotes" value="${escapeHtml(form.notes||"")}" placeholder="Optional notes..." /></div><div class="full" style="display:flex;align-items:center;gap:8px"><input id="fOpened" type="checkbox" ${form.opened?"checked":""} style="width:17px;height:17px;accent-color:#c084fc" /><label for="fOpened" style="margin-bottom:0;cursor:pointer">Opened</label></div></div>`}
+function readForm(prefix=document){return {name:prefix.querySelector("#fName").value.trim(),category:prefix.querySelector("#fCategory").value,location:prefix.querySelector("#fLocation").value,quantity:parseInt(prefix.querySelector("#fQuantity").value)||0,expDate:prefix.querySelector("#fExp").value,opened:prefix.querySelector("#fOpened").checked,notes:prefix.querySelector("#fNotes").value.trim()}}
+function renderInventory(){const list=document.getElementById("inventoryList");const sortBy=document.getElementById("sortBy").value;let groups=getGrouped(getFilteredItems());groups.sort((a,b)=>{if(sortBy==="expDate"){const da=a.earliestExpDate?new Date(a.earliestExpDate+"T12:00:00"):new Date("2099-01-01");const db=b.earliestExpDate?new Date(b.earliestExpDate+"T12:00:00"):new Date("2099-01-01");return da-db}if(sortBy==="name")return a.name.localeCompare(b.name);if(sortBy==="category")return a.category.localeCompare(b.category);return 0});if(!groups.length){list.innerHTML='<div class="empty">No items found.</div>';return}list.innerHTML=groups.map(group=>{const days=getDaysUntilExp(group.earliestExpDate);let border="#86efac";if(group.earliestExpDate&&days<0)border="#fca5a5";else if(group.earliestExpDate&&days<=3)border="#fb923c";else if(group.earliestExpDate&&days<=7)border="#fde047";else if(group.location==="Freezer")border="#93c5fd";else if(group.location==="Pantry")border="#c084fc";else if(group.location==="Counter")border="#f9a8d4";return `<div class="card group" style="border-left-color:${border}"><div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap"><div style="flex:1;min-width:230px"><div class="group-title"><span class="group-name">${escapeHtml(group.name)}</span>${group.entries.length>1?`<span class="badge" style="background:#ede9fe;color:#6b21a8;border:1px solid #ddd6fe">${group.entries.length} entries</span>`:""}</div><div style="display:flex;gap:6px;margin-top:7px;flex-wrap:wrap;align-items:center"><span class="tag">${escapeHtml(group.category)}</span><span class="tag" style="background:#dbeafe;color:#1d4ed8">${escapeHtml(group.location)}</span><span class="tag" style="background:#f3e8ff;color:#6b21a8">Total Qty: ${group.totalQuantity}</span>${expiryBadge(group.earliestExpDate)}</div></div><button class="btn-shop" data-action="move-group" data-key="${escapeHtml(group.key)}">🛒 Move All to Shopping</button></div><div style="margin-top:12px">${group.entries.map(entryHtml).join("")}</div></div>`}).join("")}
+function entryHtml(item){if(editingId===item.id){return `<div class="entry"><h4 style="margin:0 0 10px;color:#6b21a8;font-size:14px">Edit This Entry</h4><div id="editFormArea"></div><div class="row" style="margin-top:12px"><button class="btn btn-primary" data-action="save-edit">Save</button><button class="btn-secondary" data-action="cancel-edit">Cancel</button></div></div>`}return `<div class="entry"><div class="entry-top"><div style="flex:1;min-width:220px"><div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center"><span class="tag" style="background:#f3e8ff;color:#6b21a8">Qty: ${item.quantity}</span>${expiryBadge(item.expDate)}${item.opened?'<span class="badge" style="background:#fef3c7;color:#92400e;border:1px solid #fde68a">OPENED</span>':""}</div><div class="muted">Expiration: ${formatNiceDate(item.expDate)}</div><div class="muted">Added: ${item.addedAt?new Date(item.addedAt).toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"}):"Starter list"}</div>${item.notes?`<div class="notes">${escapeHtml(item.notes)}</div>`:""}</div><div class="actions"><button class="icon-btn" data-action="toggle-opened" data-id="${item.id}" style="background:${item.opened?"#fef3c7":"#dcfce7"}">${item.opened?"🔓":"🔒"}</button><button class="icon-btn" data-action="edit" data-id="${item.id}">✏️</button><button class="icon-btn" data-action="move-one" data-id="${item.id}" style="background:#fff7ed;border-color:#fed7aa">🛒</button><button class="icon-btn" data-action="delete" data-id="${item.id}" style="background:#fff1f2;border-color:#fecdd3">🗑️</button></div></div></div>`}
+function renderShopping(){const list=document.getElementById("shoppingList");if(!shoppingList.length){list.innerHTML='<div class="empty">Your shopping list is empty.</div>';return}list.innerHTML=shoppingList.map(item=>`<div class="card" style="display:flex;justify-content:space-between;align-items:center;gap:12px;border-left:6px solid #f9a8d4;opacity:${item.completed?".6":"1"}"><div style="flex:1"><div style="font-weight:800;font-size:15px;color:#4c1d95;text-decoration:${item.completed?"line-through":"none"}">${escapeHtml(item.name)}</div><div style="display:flex;gap:6px;margin-top:7px;flex-wrap:wrap"><span class="tag" style="background:#f3e8ff;color:#6b21a8">${escapeHtml(item.category)}</span><span class="tag" style="background:#dbeafe;color:#1d4ed8">${escapeHtml(item.location)}</span>${item.expDate?`<span class="tag" style="background:#fef3c7;color:#92400e">Last exp: ${formatNiceDate(item.expDate)}</span>`:""}</div><div class="muted">Added to list: ${item.addedAt?new Date(item.addedAt).toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"}):"Not tracked"}</div>${item.notes?`<div class="notes">${escapeHtml(item.notes)}</div>`:""}</div><div class="actions"><button class="icon-btn" data-action="shopping-done" data-id="${item.id}" style="background:${item.completed?"#dcfce7":"#fef3c7"}">${item.completed?"↩️":"✅"}</button><button class="icon-btn" data-action="shopping-delete" data-id="${item.id}" style="background:#fff1f2;border-color:#fecdd3">🗑️</button></div></div>`).join("")}
+function attachEditForm(){const editArea=document.getElementById("editFormArea");if(!editArea)return;const old=document.getElementById("formArea").innerHTML;renderForm();editArea.innerHTML=document.getElementById("formArea").innerHTML;document.getElementById("formArea").innerHTML=old}
+function handleInventoryClick(e){const btn=e.target.closest("button");if(!btn)return;const action=btn.dataset.action;const id=Number(btn.dataset.id);if(action==="edit"){const item=items.find(i=>i.id===id);if(!item)return;editingId=id;form={...item};renderInventory();attachEditForm()}else if(action==="cancel-edit"){editingId=null;form=emptyForm();render()}else if(action==="save-edit"){const editArea=document.getElementById("editFormArea");if(!editArea)return;const updated=readForm(editArea);if(!updated.name){alert("Please add an item name.");return}items=items.map(i=>i.id===editingId?{...updated,id:editingId,addedAt:i.addedAt||new Date().toISOString()}:i);editingId=null;render()}else if(action==="delete"){if(confirm("Delete this item?")){items=items.filter(i=>i.id!==id);render()}}else if(action==="toggle-opened"){items=items.map(i=>i.id===id?{...i,opened:!i.opened}:i);render()}else if(action==="move-one"){const item=items.find(i=>i.id===id);if(item)moveItemsToShopping([item])}else if(action==="move-group"){const key=btn.dataset.key;const entries=items.filter(i=>groupKey(i)===key);if(entries.length)moveItemsToShopping(entries)}}
+function handleShoppingClick(e){const btn=e.target.closest("button");if(!btn)return;const action=btn.dataset.action;const id=btn.dataset.id;if(action==="shopping-done"){shoppingList=shoppingList.map(i=>String(i.id)===String(id)?{...i,completed:!i.completed}:i);render()}else if(action==="shopping-delete"){shoppingList=shoppingList.filter(i=>String(i.id)!==String(id));render()}}
+function moveItemsToShopping(entries){if(!confirm("Move to shopping list and remove from inventory?"))return;const moved=entries.map(item=>({id:Date.now()+"-"+item.id+"-"+Math.random(),name:item.name,category:item.category,location:item.location,expDate:item.expDate,notes:item.notes,addedAt:new Date().toISOString(),completed:false}));shoppingList=[...moved,...shoppingList];items=items.filter(item=>!entries.some(e=>e.id===item.id));activeTab="shopping";render()}
+async function lookupBarcode(barcode){try{const res=await fetch(`https://world.openfoodfacts.org/api/v0/product/${barcode}.json`);const data=await res.json();if(data.status===1&&data.product){const p=data.product;const name=p.product_name||p.product_name_en||"";const brand=p.brands||"";const fullName=brand&&name?`${brand} ${name}`:name||brand||"";const cats=(p.categories||"").toLowerCase();let category="Other";if(cats.includes("dairy")||cats.includes("yogurt")||cats.includes("cheese")||cats.includes("milk")||cats.includes("butter"))category="Dairy";else if(cats.includes("frozen"))category="Frozen";else if(cats.includes("meat")||cats.includes("chicken")||cats.includes("beef")||cats.includes("pork"))category="Meat";else if(cats.includes("beverage")||cats.includes("juice")||cats.includes("drink"))category="Beverages";else if(cats.includes("snack")||cats.includes("chip")||cats.includes("cracker")||cats.includes("cookie"))category="Snacks";else if(cats.includes("fruit")||cats.includes("vegetable")||cats.includes("produce"))category="Produce";else if(cats.includes("pasta")||cats.includes("rice")||cats.includes("cereal")||cats.includes("bread")||cats.includes("flour"))category="Pantry";return{found:true,name:fullName,category,notes:`UPC: ${barcode}`}}}catch(e){}return{found:false}}
+async function handleBarcode(barcode){closeScanner();document.getElementById("addCard").classList.remove("hidden");showScanStatus("🔍 Looking up product…","#eff6ff","#1d4ed8");const result=await lookupBarcode(barcode);if(result.found){form={...form,name:result.name,category:result.category,notes:result.notes};showScanStatus("✅ Product found! Review and update the fields below.","#f0fdf4","#166534")}else{form={...form,notes:"UPC: "+barcode};showScanStatus("⚠️ Product not in database. UPC saved to notes.","#fef9c3","#92400e")}renderForm()}
+function showScanStatus(text,bg,color){document.getElementById("scanStatus").innerHTML=`<div style="background:${bg};border:1.5px solid currentColor;border-radius:12px;padding:10px 12px;margin-bottom:12px;font-size:13px;color:${color};font-weight:800">${text}</div>`}
+async function openScanner(){document.getElementById("scannerModal").classList.remove("hidden");document.getElementById("scannerError").classList.add("hidden");document.getElementById("manualBarcode").value="";try{if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia||!window.ZXing)throw new Error("Scanner unavailable");codeReader=new ZXing.BrowserMultiFormatReader();let selectedDeviceId=null;try{const devices=await codeReader.listVideoInputDevices();const back=devices.find(d=>/back|rear|environment/i.test(d.label||""))||devices[devices.length-1];selectedDeviceId=back?back.deviceId:null}catch(e){}await codeReader.decodeFromVideoDevice(selectedDeviceId,document.getElementById("scannerVideo"),result=>{if(result)handleBarcode(result.getText())})}catch(e){const err=document.getElementById("scannerError");err.textContent="⚠️ Camera scanning could not start. You can still type or paste the barcode below.";err.classList.remove("hidden")}}
+function closeScanner(){try{if(codeReader)codeReader.reset()}catch(e){}document.getElementById("scannerModal").classList.add("hidden")}
+function initialize(){CATEGORIES.forEach(c=>document.getElementById("categoryFilter").insertAdjacentHTML("beforeend",`<option>${c}</option>`));["All",...LOCATIONS].forEach(l=>document.getElementById("locationFilter").insertAdjacentHTML("beforeend",`<option>${l}</option>`));document.getElementById("inventoryTab").onclick=()=>{activeTab="inventory";render()};document.getElementById("shoppingTab").onclick=()=>{activeTab="shopping";render()};document.getElementById("searchInput").oninput=render;document.getElementById("categoryFilter").onchange=render;document.getElementById("locationFilter").onchange=render;document.getElementById("sortBy").onchange=render;document.getElementById("inventoryList").onclick=handleInventoryClick;document.getElementById("shoppingList").onclick=handleShoppingClick;document.getElementById("showAddBtn").onclick=()=>{editingId=null;form=emptyForm();document.getElementById("scanStatus").innerHTML="";document.getElementById("addCard").classList.remove("hidden");renderForm()};document.getElementById("cancelAddBtn").onclick=()=>{document.getElementById("addCard").classList.add("hidden");document.getElementById("scanStatus").innerHTML=""};document.getElementById("saveItemBtn").onclick=()=>{const newItem=readForm();if(!newItem.name){alert("Please add an item name.");return}items.push({...newItem,id:nextId++,addedAt:new Date().toISOString()});document.getElementById("addCard").classList.add("hidden");document.getElementById("scanStatus").innerHTML="";render()};document.getElementById("backupBtn").onclick=()=>{const backup={createdAt:new Date().toISOString(),items,nextId,shoppingList};const blob=new Blob([JSON.stringify(backup,null,2)],{type:"application/json"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download="home-inventory-backup.json";a.click();URL.revokeObjectURL(url)};document.getElementById("restoreInput").onchange=e=>{const file=e.target.files[0];if(!file)return;const reader=new FileReader();reader.onload=ev=>{try{const data=JSON.parse(ev.target.result);const imported=Array.isArray(data)?data:data.items;if(!Array.isArray(imported))throw new Error("Invalid backup");items=ensureAddedDates(imported);shoppingList=Array.isArray(data.shoppingList)?data.shoppingList:[];nextId=data.nextId||imported.reduce((m,i)=>Math.max(m,i.id||0),0)+1;render();alert("Backup imported.")}catch(e){alert("Could not read that backup file.")}};reader.readAsText(file);e.target.value=""};document.getElementById("recoverBtn").onclick=()=>{if(!confirm("Recover the built-in starter pantry list? This replaces the current inventory list."))return;items=ensureAddedDates(INITIAL_ITEMS);shoppingList=[];nextId=Math.max(...INITIAL_ITEMS.map(i=>i.id||0))+1;activeTab="inventory";render()};document.getElementById("scanBtn").onclick=openScanner;document.getElementById("closeScannerBtn").onclick=closeScanner;document.getElementById("manualBarcodeBtn").onclick=()=>{const cleaned=document.getElementById("manualBarcode").value.replace(/\D/g,"");if(!cleaned){alert("Please enter or paste the barcode number.");return}handleBarcode(cleaned)};document.getElementById("clearBoughtBtn").onclick=()=>{shoppingList=shoppingList.filter(i=>!i.completed);render()};render()}
+initialize();
 </script>
+<script>
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", function () {
+    navigator.serviceWorker.register("./service-worker.js").catch(function (err) {
+      console.log("Service worker registration failed:", err);
+    });
+  });
+}
+</script>
+
+<script>
+(function(){
+  function safeItems(){
+    try{
+      if(typeof items !== "undefined" && Array.isArray(items)) return items;
+    }catch(e){}
+    return [];
+  }
+
+  function esc(v){
+    return String(v ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
+  }
+
+  function daysUntil(dateStr){
+    if(!dateStr) return 9999;
+    const today = new Date(); today.setHours(0,0,0,0);
+    const exp = new Date(dateStr + "T12:00:00"); exp.setHours(0,0,0,0);
+    return Math.round((exp - today)/86400000);
+  }
+
+  function niceDate(dateStr){
+    if(!dateStr) return "No date";
+    return new Date(dateStr + "T12:00:00").toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"});
+  }
+
+  function hasAny(names, terms){
+    return terms.some(t => names.some(n => n.includes(t)));
+  }
+
+  window.renderSmartTools = function(){
+    const box = document.getElementById("smartToolsContent");
+    if(!box) return;
+
+    const list = safeItems();
+    const names = list.map(i => String(i.name || "").toLowerCase());
+
+    const useFirst = list
+      .filter(i => i.expDate)
+      .map(i => ({...i, daysLeft: daysUntil(i.expDate)}))
+      .filter(i => i.daysLeft <= 14)
+      .sort((a,b) => a.daysLeft - b.daysLeft)
+      .slice(0, 6);
+
+    const ideas = [];
+
+    if(hasAny(names, ["chicken"]) && hasAny(names, ["rice", "yellow rice"])){
+      ideas.push(["Chicken & Rice Bowls", "Use chicken with rice, vegetables, and sauce or seasoning."]);
+    }
+    if(hasAny(names, ["pasta","ziti","elbow","fettuccine","angel hair","orzo"]) && hasAny(names, ["tomato sauce","crushed tomatoes","vodka sauce","alfredo"])){
+      ideas.push(["Pantry Pasta Night", "Pair pasta with sauce, canned tomatoes, meatballs, or vegetables."]);
+    }
+    if(hasAny(names, ["yogurt"]) && hasAny(names, ["strawberries","blueberries","mixed fruit","granola"])){
+      ideas.push(["Yogurt Parfaits or Smoothies", "Use yogurt with frozen fruit and granola, especially items close to expiration."]);
+    }
+    if(hasAny(names, ["tortilla","taco","ground beef"])){
+      ideas.push(["Taco or Quesadilla Night", "Use tortillas, cheese, taco sauce, seasoning, beans, beef, or chicken."]);
+    }
+    if(hasAny(names, ["soup","broth","stock"]) && hasAny(names, ["egg noodles","orzo","rice"])){
+      ideas.push(["Soup Stretch Meal", "Use canned soup or broth with noodles, rice, vegetables, or leftover protein."]);
+    }
+    if(hasAny(names, ["nuggets","chicken patties","pizza","mac & cheese","ravioli"])){
+      ideas.push(["Fast Freezer Dinner", "Use freezer staples with a vegetable or fruit cup on the side."]);
+    }
+    if(!ideas.length) ideas.push(["Use-First Snack Plate", "Pick 2 or 3 soon-to-expire items and build a quick snack plate."]);
+
+    const useFirstHtml = useFirst.length
+      ? useFirst.map(i => `<div class="upgrade-card"><div class="upgrade-title">${esc(i.name)}</div><div class="upgrade-meta">Qty: ${esc(i.quantity)} · ${esc(i.location)} · Exp: ${niceDate(i.expDate)} · ${i.daysLeft < 0 ? "Expired" : i.daysLeft + " days left"}</div></div>`).join("")
+      : `<div class="upgrade-card"><div class="upgrade-title">✅ Nothing urgent</div><div class="upgrade-meta">No dated items are expiring within 14 days.</div></div>`;
+
+    const ideasHtml = ideas.map(i => `<div class="upgrade-card"><div class="upgrade-title">🍽️ ${esc(i[0])}</div><div class="upgrade-meta">${esc(i[1])}</div></div>`).join("");
+
+    box.innerHTML = `
+      <div class="upgrade-card" style="background:linear-gradient(135deg,#fef3c7,#ffedd5)">
+        <div class="upgrade-title">⏰ Use First</div>
+        <div class="upgrade-meta">${useFirst.length} item(s) need attention soon.</div>
+      </div>
+      <div class="upgrade-card" style="background:linear-gradient(135deg,#dcfce7,#cffafe)">
+        <div class="upgrade-title">🍽️ Meal Ideas</div>
+        <div class="upgrade-meta">${ideas.length} idea(s) generated from your pantry.</div>
+      </div>
+      <div class="upgrade-card" style="background:linear-gradient(135deg,#fce7f3,#ede9fe)">
+        <div class="upgrade-title">👨‍👩‍👧‍👦 Family Sync</div>
+        <div class="upgrade-meta">Use Backup and Restore to share your latest pantry file with another phone.</div>
+      </div>
+      <div class="upgrade-card" style="background:linear-gradient(135deg,#dbeafe,#ede9fe)">
+        <div class="upgrade-title">📱 Installed App</div>
+        <div class="upgrade-meta">Open in Safari, tap Share, then Add to Home Screen.</div>
+      </div>
+      <div style="grid-column:1/-1"><div class="upgrade-title" style="margin:4px 0 8px">⏰ Use these first</div><div class="upgrade-grid">${useFirstHtml}</div></div>
+      <div style="grid-column:1/-1"><div class="upgrade-title" style="margin:10px 0 8px">🍽️ Meal ideas</div><div class="upgrade-grid">${ideasHtml}</div></div>
+    `;
+  };
+
+  document.addEventListener("DOMContentLoaded", function(){
+    const btn = document.getElementById("refreshSmartTools");
+    if(btn) btn.addEventListener("click", window.renderSmartTools);
+    setTimeout(window.renderSmartTools, 400);
+  });
+
+  const oldRender = window.render;
+  if(typeof oldRender === "function"){
+    window.render = function(){
+      oldRender();
+      window.renderSmartTools();
+    };
+  }
+})();
+</script>
+
 </body>
 </html>
