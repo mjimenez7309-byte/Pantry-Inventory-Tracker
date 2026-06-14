@@ -1,4 +1,4 @@
-const CACHE_NAME = "stocksmart-v5-2-0-20260614-153640";
+const CACHE_NAME = "stocksmart-v5-2-1-20260614-scan-mode-visible";
 const APP_SHELL = [
   "./",
   "./index.html",
