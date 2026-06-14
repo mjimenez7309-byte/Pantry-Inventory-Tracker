@@ -1,4 +1,4 @@
-const CACHE_NAME = "stocksmart-v5-2-3-20260614-mobile-card-view";
+const CACHE_NAME = "stocksmart-v5-2-4-20260614-upc-location-compact-mobile";
 const APP_SHELL = [
   "./",
   "./index.html",
