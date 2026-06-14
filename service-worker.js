@@ -1,52 +1,48 @@
-const CACHE_NAME = "stocksmart-v5-2-6-20260614-menu-opened-date";
-const APP_SHELL = [
+// service-worker.js
+// StockSmart v5.2.7
+// Upload this file to GitHub as: service-worker.js
+
+const CACHE_NAME = "stocksmart-v5-2-7";
+
+const FILES_TO_CACHE = [
   "./",
   "./index.html",
   "./manifest.json",
   "./icon.png"
 ];
 
-self.addEventListener("install", event => {
+self.addEventListener("install", (event) => {
+  event.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(FILES_TO_CACHE))
+  );
   self.skipWaiting();
-  event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(APP_SHELL).catch(() => undefined))
-  );
 });
 
-self.addEventListener("activate", event => {
+self.addEventListener("activate", (event) => {
   event.waitUntil(
-    caches.keys().then(keys => Promise.all(
-      keys.filter(key => key.startsWith("stocksmart-") && key !== CACHE_NAME).map(key => caches.delete(key))
-    )).then(() => self.clients.claim())
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames
+          .filter((cacheName) => cacheName !== CACHE_NAME)
+          .map((cacheName) => caches.delete(cacheName))
+      );
+    })
   );
+  self.clients.claim();
 });
 
-self.addEventListener("fetch", event => {
-  const request = event.request;
-  if (request.method !== "GET") return;
+self.addEventListener("fetch", (event) => {
+  if (event.request.method !== "GET") return;
 
-  const url = new URL(request.url);
-
-  if (request.mode === "navigate" || url.pathname.endsWith("/index.html")) {
-    event.respondWith(
-      fetch(request)
-        .then(response => {
-          const copy = response.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put("./index.html", copy));
-          return response;
-        })
-        .catch(() => caches.match("./index.html"))
-    );
-    return;
-  }
-
-  if (url.origin === location.origin) {
-    event.respondWith(
-      caches.match(request).then(cached => cached || fetch(request).then(response => {
-        const copy = response.clone();
-        caches.open(CACHE_NAME).then(cache => cache.put(request, copy));
+  event.respondWith(
+    fetch(event.request)
+      .then((response) => {
+        const responseClone = response.clone();
+        caches.open(CACHE_NAME).then((cache) => {
+          cache.put(event.request, responseClone);
+        });
         return response;
-      }))
-    );
-  }
+      })
+      .catch(() => caches.match(event.request))
+  );
 });
