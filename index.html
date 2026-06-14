@@ -194,6 +194,29 @@ input:focus, select:focus { box-shadow:0 0 0 3px rgba(60,198,183,.2); border-col
   .footer { font-size:12px; text-align:center; }
 }
 
+
+
+/* v5.2.4 tighter mobile inventory cards */
+@media(max-width:760px) {
+  .table tr { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); margin:0 0 8px; border-radius:14px; box-shadow:0 5px 14px rgba(37,36,93,.055); }
+  .table td { padding:6px 8px; gap:6px; font-size:12px; border-bottom:none; min-width:0; }
+  .table td.item-cell { grid-column:1/-1; padding:8px 9px; }
+  .table td.item-cell .item-main { gap:8px; align-items:center; }
+  .table td.item-cell .thumb { width:34px; height:34px; border-radius:10px; font-size:18px; }
+  .table td.item-cell .item-name { font-size:13px; line-height:1.15; }
+  .table td.item-cell .item-note { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:calc(100vw - 96px); font-size:11px; line-height:1.2; margin-top:2px; }
+  .table td.field-cell { min-height:30px; border-top:1px solid #edf2f7; align-items:center; }
+  .table td.field-cell::before { font-size:9px; letter-spacing:.03em; }
+  .table td.field-cell > *:last-child, .table td.field-cell > strong:last-child { max-width:70%; overflow:hidden; text-overflow:ellipsis; }
+  .table td.field-cell[data-label="Expiration"] > div { line-height:1.15; }
+  .badge { font-size:10px; padding:5px 6px; border-radius:8px; }
+  .table td.actions-cell-wrap { grid-column:1/-1; padding:7px 8px; border-top:1px solid #edf2f7; }
+  .actions-cell { gap:6px; }
+  .actions-cell .icon-btn { height:34px; border-radius:9px; font-size:13px; }
+  .actions-cell .icon-btn::after { font-size:10px; margin-left:4px; }
+  .load-more { padding:10px 14px; font-size:13px; }
+}
+
 </style>
 </head>
 <body>
@@ -286,7 +309,7 @@ input:focus, select:focus { box-shadow:0 0 0 3px rgba(60,198,183,.2); border-col
       <section class="panel" id="mealIdeasPanel"><div class="side-title"><h3>🍽️ Meal Ideas</h3><button id="refreshMealIdeasInline">Refresh →</button></div><div class="mini-list" id="mealIdeasList"></div></section>
     </aside>
   </main>
-  <footer class="footer"><div id="lastBackup">📅 Built-in backup: 2026-06-14T15:36:40.394Z</div><div>💚 All changes saved locally</div><div>StockSmart v5.2.3</div></footer>
+  <footer class="footer"><div id="lastBackup">📅 Built-in backup: 2026-06-14T15:36:40.394Z</div><div>💚 All changes saved locally</div><div>StockSmart v5.2.4</div></footer>
 </div>
 
 <div class="modal" id="itemModal"><div class="modal-box"><div class="modal-head"><h3 id="itemModalTitle">Add Item</h3><button class="secondary" id="closeItemModal">Close</button></div><div class="modal-body">
@@ -377,7 +400,8 @@ function showInventoryCheckResult(barcode, lookup, matchResult) {
   const productName = lookup?.name || "";
   const safeBarcode = encodeURIComponent(String(barcode || ""));
   smartModalTitle.textContent = "🛒 Inventory Check";
-  const header = `<p style="margin-top:0"><strong>Scanned:</strong> ${esc(barcode)}${productName?`<br><strong>Product:</strong> ${esc(productName)}`:""}</p>`;
+  const suggested = lookup?.location ? `<br><strong>Suggested location:</strong> ${esc(lookup.location)}${lookup?.learnedFromInventory?" <span style='color:#667085'>(learned from saved UPC)</span>":""}` : "";
+  const header = `<p style="margin-top:0"><strong>Scanned:</strong> ${esc(barcode)}${productName?`<br><strong>Product:</strong> ${esc(productName)}`:""}${suggested}</p>`;
   const addButtonLabel = matchResult.matches.length ? "Add this scanned item anyway" : "Add this scanned item";
   const addButton = `<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px"><button class="primary" onclick="startScannedAdd(decodeURIComponent('${safeBarcode}'))">➕ ${addButtonLabel}</button><button class="secondary" onclick="closeModal('smartModal'); openScanner('check');">Scan another item</button></div>`;
   if(matchResult.matches.length) {
@@ -392,7 +416,9 @@ async function startScannedAdd(barcode) {
   closeModal("smartModal");
   const result = await lookupBarcode(barcode);
   clearForm();
-  if(result.found){formName.value=result.name; formImage.value=result.imageUrl||""; formCategory.value=result.category||"Other"; formLocation.value=result.location||inferLocationFromCategory(result.category||"Other");}
+  if(result.found){formName.value=result.name; formImage.value=result.imageUrl||"";}
+  formCategory.value=result.category||"Other";
+  formLocation.value=result.location||inferLocationFromCategory(result.category||"Other");
   formNotes.value=result.notes;
   openModal("itemModal");
 }
@@ -446,11 +472,87 @@ function useFirst() { showInventory("expiring"); }
 function mealIdeas(open=true) { state.mealSeed++; const ideas=recipeIdeas(); renderMealIdeasInline(); if(!open)return; smartModalTitle.textContent="🍽️ Meal Ideas & Recipes"; smartModalBody.innerHTML=ideas.map(i=>`<div class="recipe-card"><h4>${esc(i.title)}</h4><strong>Use:</strong><ul>${i.ingredients.map(x=>`<li>${esc(x)}</li>`).join("")}</ul><strong>Quick recipe:</strong><ol>${i.steps.map(x=>`<li>${esc(x)}</li>`).join("")}</ol></div>`).join(""); openModal("smartModal"); }
 function familySync() { smartModalTitle.textContent="👥 Family Sync"; smartModalBody.innerHTML=`<p>Use <strong>Backup</strong> to save your latest inventory, then send the JSON file to another phone or computer. On that device, use <strong>Restore</strong>.</p><p>This is manual sync. True live sync needs a database/backend.</p>`; openModal("smartModal"); }
 function installHelp() { smartModalTitle.textContent="📱 Installed App"; smartModalBody.innerHTML=`<p><strong>iPhone:</strong> Open in Safari → Share → Add to Home Screen.</p><p><strong>Edge/Chrome desktop:</strong> Open the site → menu → Apps → Install this site as an app.</p>`; openModal("smartModal"); }
-function inferCategoryFromProduct(product, fallbackName="") { const text=[fallbackName, product?.categories, product?.categories_tags?.join(" "), product?.generic_name, product?.food_groups, product?.stores].filter(Boolean).join(" ").toLowerCase(); if(/milk|cheese|yogurt|yoghurt|butter|cream|dairy|egg/.test(text)) return "Dairy"; if(/fruit|vegetable|produce|salad|apple|banana|berries|tomato|lettuce|pepper|onion|potato/.test(text)) return "Produce"; if(/chicken|beef|pork|turkey|meat|sausage|bacon|ham|fish|seafood/.test(text)) return "Meat"; if(/frozen|ice cream|pizza|waffle|pancake|nugget|freezer/.test(text)) return "Frozen"; if(/juice|water|drink|beverage|soda|tea|coffee|smoothie/.test(text)) return "Beverages"; if(/snack|chips|cracker|cookie|bar|candy|popcorn|nuts|granola/.test(text)) return "Snacks"; if(/paper towel|toilet paper|tissue|cleaner|detergent|soap|trash bag|household/.test(text)) return "Household"; if(/soup|sauce|pasta|rice|beans|cereal|oat|flour|sugar|oil|vinegar|spice|pantry|canned/.test(text)) return "Pantry"; return "Other"; }
-function inferLocationFromCategory(category) { if(category==="Dairy"||category==="Produce") return "Fridge"; if(category==="Frozen"||category==="Meat") return "Freezer"; if(category==="Household") return "Household"; return "Pantry"; }
-async function lookupBarcode(barcode) { try{const res=await fetch(`https://world.openfoodfacts.org/api/v0/product/${barcode}.json`); const data=await res.json(); if(data.status===1&&data.product){const p=data.product; const name=[p.brands,p.product_name||p.product_name_en].filter(Boolean).join(" "); const category=inferCategoryFromProduct(p,name); return {found:true,name:name||"Scanned Item",category,location:inferLocationFromCategory(category),notes:"UPC: "+barcode,imageUrl:p.image_front_url||p.image_url||""};}}catch{} return {found:false,category:"Other",location:"Pantry",notes:"UPC: "+barcode,imageUrl:""}; }
+function productLookupText(product, fallbackName="") {
+  if(!product) return String(fallbackName||"").toLowerCase();
+  return [
+    fallbackName,
+    product.product_name,
+    product.product_name_en,
+    product.brands,
+    product.generic_name,
+    product.categories,
+    product.categories_tags?.join(" "),
+    product.food_groups,
+    product.food_groups_tags?.join(" "),
+    product.stores,
+    product.ingredients_text,
+    product.packaging,
+    product.conservation_conditions,
+    product.conservation_conditions_en,
+    product.storage_conditions
+  ].filter(Boolean).join(" ").toLowerCase();
+}
+function inferCategoryFromProduct(product, fallbackName="") {
+  const text=productLookupText(product,fallbackName);
+  if(/paper towel|toilet paper|bath tissue|facial tissue|wipe|diaper|cleaner|detergent|soap|trash bag|garbage bag|laundry|household/.test(text)) return "Household";
+  if(/frozen|freezer|ice cream|frozen dessert|popsicle|frozen pizza|frozen waffle|frozen pancake|frozen vegetables|frozen fruit|nugget|hash brown|pupusa|mozzarella stick/.test(text)) return "Frozen";
+  if(/chicken|beef|pork|turkey|meat|sausage|bacon|ham|fish|seafood|shrimp|steak|ground beef|ground chicken/.test(text)) return "Meat";
+  if(/milk|cheese|yogurt|yoghurt|butter|cream|creamer|dairy|egg|sour cream|cream cheese|pudding/.test(text)) return "Dairy";
+  if(/juice|water|drink|beverage|soda|tea|coffee|smoothie|almondmilk|almond milk/.test(text)) return "Beverages";
+  if(/fruit|vegetable|produce|salad|apple|banana|berries|strawberr|blueberr|grape|tomato|lettuce|pepper|onion|potato|garlic|carrot/.test(text)) return "Produce";
+  if(/snack|chips|cracker|cookie|bar|candy|popcorn|nuts|granola|muffin|little bites|goldfish|pringles|doritos/.test(text)) return "Snacks";
+  if(/soup|sauce|pasta|rice|beans|cereal|oat|flour|sugar|oil|vinegar|spice|pantry|canned|broth|stock|macaroni|noodle|tortilla|shell/.test(text)) return "Pantry";
+  return "Other";
+}
+function mostCommonValue(values) {
+  const counts = new Map();
+  values.filter(Boolean).forEach(v=>counts.set(v,(counts.get(v)||0)+1));
+  return [...counts.entries()].sort((a,b)=>b[1]-a[1])[0]?.[0] || "";
+}
+function inferFromExistingBarcode(barcode) {
+  const code=cleanBarcode(barcode);
+  if(!code) return null;
+  const exact=items.filter(item=>extractBarcodes(item).some(upc=>upc===code));
+  if(!exact.length) return null;
+  return {
+    category: mostCommonValue(exact.map(i=>i.category)) || "Other",
+    location: mostCommonValue(exact.map(i=>i.location)) || "Pantry",
+    matchedItems: exact.length
+  };
+}
+function inferLocationFromProduct(product, fallbackName="", category="Other") {
+  const text=productLookupText(product,fallbackName);
+  if(/paper towel|toilet paper|bath tissue|facial tissue|wipe|diaper|cleaner|detergent|soap|trash bag|garbage bag|laundry|household/.test(text) || category==="Household") return "Household";
+  if(/frozen|freezer|keep frozen|ice cream|frozen dessert|popsicle|frozen pizza|frozen waffle|frozen pancake|frozen vegetables|frozen fruit|nugget|hash brown|pupusa|mozzarella stick/.test(text) || category==="Frozen") return "Freezer";
+  if(/keep refrigerated|refrigerate after opening|refrigerated|chilled|perishable|deli|bacon|hot dog|sausage|fresh meat|fresh poultry|fresh fish|yogurt|yoghurt|milk|cream cheese|sour cream|cheese|butter|eggs?|creamer|pudding/.test(text)) return "Fridge";
+  if(category==="Meat" || category==="Dairy") return "Fridge";
+  if(category==="Produce") {
+    if(/banana|potato|onion|garlic|shallot|avocado|tomato|citrus|orange|lemon|lime|counter/.test(text)) return "Counter";
+    return "Fridge";
+  }
+  if(category==="Beverages" && /juice|milk|almondmilk|almond milk|creamer|smoothie/.test(text)) return "Fridge";
+  if(/shelf stable|shelf-stable|ambient|store in a cool dry place|cool dry place|dry place|canned|can|jar|box|pouch|packet|crackers|chips|cookies|cereal|pasta|rice|sauce|broth|stock|soup|oats|flour|sugar|oil|vinegar/.test(text)) return "Pantry";
+  if(category==="Snacks" || category==="Pantry" || category==="Beverages") return "Pantry";
+  return "Pantry";
+}
+function inferLocationFromCategory(category) { return inferLocationFromProduct(null,"",category); }
+async function lookupBarcode(barcode) {
+  const learned = inferFromExistingBarcode(barcode);
+  try{
+    const res=await fetch(`https://world.openfoodfacts.org/api/v0/product/${barcode}.json`);
+    const data=await res.json();
+    if(data.status===1&&data.product){
+      const p=data.product;
+      const name=[p.brands,p.product_name||p.product_name_en].filter(Boolean).join(" ") || "Scanned Item";
+      const category=learned?.category || inferCategoryFromProduct(p,name);
+      const location=learned?.location || inferLocationFromProduct(p,name,category);
+      return {found:true,name,category,location,notes:"UPC: "+barcode,imageUrl:p.image_front_url||p.image_url||"",learnedFromInventory:!!learned};
+    }
+  }catch{}
+  return {found:false,category:learned?.category||"Other",location:learned?.location||"Pantry",notes:"UPC: "+barcode,imageUrl:"",learnedFromInventory:!!learned};
+}
 function setBarcodeMode(mode="add") { const select=document.getElementById("barcodeMode"); if(select) select.value=mode; document.querySelectorAll(".scan-mode-btn").forEach(btn=>btn.classList.toggle("active",btn.dataset.barcodeMode===mode)); }
-async function handleBarcode(barcode) { closeScanner(); const result=await lookupBarcode(barcode); const mode=(document.getElementById("barcodeMode")?.value||"add"); if(mode==="check"){ const matches=findInventoryMatches(barcode,result?.name||""); showInventoryCheckResult(barcode,result,matches); return; } clearForm(); if(result.found){formName.value=result.name; formImage.value=result.imageUrl||""; formCategory.value=result.category||"Other"; formLocation.value=result.location||inferLocationFromCategory(result.category||"Other");} formNotes.value=result.notes; openModal("itemModal"); }
+async function handleBarcode(barcode) { closeScanner(); const result=await lookupBarcode(barcode); const mode=(document.getElementById("barcodeMode")?.value||"add"); if(mode==="check"){ const matches=findInventoryMatches(barcode,result?.name||""); showInventoryCheckResult(barcode,result,matches); return; } clearForm(); if(result.found){formName.value=result.name; formImage.value=result.imageUrl||"";} formCategory.value=result.category||"Other"; formLocation.value=result.location||inferLocationFromCategory(result.category||"Other"); formNotes.value=result.notes; openModal("itemModal"); }
 async function openScanner(mode="add") { openModal("scannerModal"); scannerError.textContent=""; manualBarcode.value=""; setBarcodeMode(mode); try{ if(!window.ZXing||!navigator.mediaDevices)throw new Error(); codeReader=new ZXing.BrowserMultiFormatReader(); let deviceId=null; try{const devices=await codeReader.listVideoInputDevices(); const back=devices.find(d=>/back|rear|environment/i.test(d.label||""))||devices[devices.length-1]; deviceId=back?back.deviceId:null;}catch{} await codeReader.decodeFromVideoDevice(deviceId,scannerVideo,result=>{if(result)handleBarcode(result.getText());}); }catch{ scannerError.textContent="Camera scanning could not start. Type or paste the barcode instead."; } }
 function closeScanner() { try{if(codeReader)codeReader.reset();}catch{} closeModal("scannerModal"); }
 function init() { CATEGORIES.forEach(c=>categoryFilter.insertAdjacentHTML("beforeend",`<option value="${c}">${c==="All"?"All Categories":c}</option>`)); CATEGORIES.filter(c=>c!=="All").forEach(c=>{formCategory.insertAdjacentHTML("beforeend",`<option>${c}</option>`); shopCategory.insertAdjacentHTML("beforeend",`<option>${c}</option>`);}); LOCATIONS.forEach(l=>{formLocation.insertAdjacentHTML("beforeend",`<option>${l}</option>`); shopLocation.insertAdjacentHTML("beforeend",`<option>${l}</option>`);}); addBtn.onclick=openAdd; scanBtn.onclick=()=>openScanner("add"); document.querySelectorAll(".scan-mode-btn").forEach(btn=>btn.onclick=()=>setBarcodeMode(btn.dataset.barcodeMode)); shoppingTopBtn.onclick=showShopping; backupBtn.onclick=backup; restoreInput.onchange=e=>restoreFile(e.target.files[0]); recoverBtn.onclick=recover; totalCard.onclick=()=>{state.metricFilter=null;state.activeLocation="All";state.grouped=false;showInventory();}; groupedCard.onclick=()=>{state.grouped=true;showInventory();}; expiringCard.onclick=()=>showInventory("expiring"); expiredCard.onclick=()=>showInventory("expired"); shoppingCard.onclick=showShopping; addShoppingBtn.onclick=openShoppingAdd; document.querySelectorAll(".loc-btn").forEach(btn=>btn.onclick=()=>{state.activeLocation=btn.dataset.location;state.metricFilter=null;state.mode="inventory";state.limit=10;render();}); searchInput.oninput=e=>{state.search=e.target.value;state.limit=10;render();}; categoryFilter.onchange=e=>{state.activeCategory=e.target.value;state.limit=10;render();}; sortSelect.onchange=e=>{state.sort=e.target.value;render();}; toggleGroupedBtn.onclick=()=>{state.grouped=!state.grouped;clearSelection();render();}; loadMoreBtn.onclick=()=>{state.limit+=25;render();}; selectAllVisible.onchange=e=>toggleSelectAllVisible(e.target); selectVisibleBtn.onclick=selectVisibleItems; clearSelectionBtn.onclick=clearSelection; deleteSelectedBtn.onclick=deleteSelectedItems; viewExpiringBtn.onclick=()=>showInventory("expiring"); viewAllLocationsBtn.onclick=()=>{state.activeLocation="All";showInventory();}; useFirstBtn.onclick=useFirst; mealIdeasBtn.onclick=()=>mealIdeas(true); refreshMealIdeasInline.onclick=()=>mealIdeas(false); dealsSmartBtn.onclick=weeklyCirculars; familySyncBtn.onclick=familySync; installHelpBtn.onclick=installHelp; refreshSmartBtn.onclick=renderSidebar; closeItemModal.onclick=()=>closeModal("itemModal"); cancelItemBtn.onclick=()=>closeModal("itemModal"); saveItemBtn.onclick=saveItem; closeShoppingModal.onclick=()=>closeModal("shoppingModal"); cancelShoppingBtn.onclick=()=>closeModal("shoppingModal"); saveShoppingBtn.onclick=saveShoppingItem; closeSmartModal.onclick=()=>closeModal("smartModal"); closeScannerBtn.onclick=closeScanner; manualBarcodeBtn.onclick=()=>{const code=manualBarcode.value.replace(/\D/g,""); if(!code)return alert("Enter a barcode number."); handleBarcode(code);}; if("serviceWorker" in navigator) window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js").catch(()=>{})); render(); }
