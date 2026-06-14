@@ -40,7 +40,7 @@ button:active { transform:scale(.98); }
 .pills { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
 .pill { border-radius:999px; padding:7px 13px; font-size:14px; font-weight:850; border:1px solid rgba(37,36,93,.08); background:#fff; box-shadow:0 3px 10px rgba(37,36,93,.05); }
 .purple { color:#523bc7; background:#eeeaff; } .orange { color:#b14d04; background:#fff0d7; } .red { color:#c91f35; background:#ffe6e9; }
-.top-actions { display:grid; grid-template-columns:repeat(6, 102px); gap:12px; }
+.top-actions { display:grid; grid-template-columns:repeat(3, 112px); gap:12px; }
 .action-tile { min-height:92px; border:1px solid var(--line); background:rgba(255,255,255,.88); border-radius:18px; box-shadow:0 8px 20px rgba(37,36,93,.06); display:flex; flex-direction:column; justify-content:center; align-items:center; gap:7px; color:var(--navy); font-weight:850; }
 .action-tile .ico { font-size:27px; }
 
@@ -129,7 +129,7 @@ input:focus, select:focus { box-shadow:0 0 0 3px rgba(60,198,183,.2); border-col
 .scan-mode-btn { border:1px solid var(--line); background:#fff; color:var(--navy); border-radius:14px; min-height:58px; padding:10px; font-weight:900; box-shadow:0 4px 12px rgba(37,36,93,.05); }
 .scan-mode-btn.active { background:linear-gradient(135deg,#3479ff,#3cc6b7); color:#fff; border-color:transparent; }
 #scannerVideo { width:100%; min-height:260px; background:#0b1220; display:block; } .hidden-input { display:none; }
-@media(max-width:1250px) { .topbar { grid-template-columns:1fr; } .top-actions { grid-template-columns:repeat(6, minmax(88px,1fr)); } .metrics { grid-template-columns:repeat(2,1fr); } .dashboard { grid-template-columns:1fr; } .side-stack { position:static; max-height:none; overflow:visible; } }
+@media(max-width:1250px) { .topbar { grid-template-columns:1fr; } .top-actions { grid-template-columns:repeat(3, minmax(88px,1fr)); } .metrics { grid-template-columns:repeat(2,1fr); } .dashboard { grid-template-columns:1fr; } .side-stack { position:static; max-height:none; overflow:visible; } }
 @media(max-width:760px) { .app-shell { padding:16px 12px 26px; } .brand img { width:80px; height:80px; border-radius:18px; } .brand h1 { font-size:34px; } .tagline { font-size:15px; } .top-actions { grid-template-columns:repeat(3,1fr); } .action-tile { min-height:76px; } .metrics { grid-template-columns:1fr; } .loc-btn { flex:1; justify-content:center; padding:0 10px; } .search { min-width:100%; } .controls-inline { width:100%; } .controls-inline select { flex:1; min-width:150px; } .table-scroll { max-height:none; } .smart-grid { grid-template-columns:repeat(2,1fr); } .form-grid { grid-template-columns:1fr; } .scan-mode-buttons { grid-template-columns:1fr; } .footer { flex-direction:column; gap:8px; } }
 
 /* v5.2.3 mobile inventory card view */
@@ -220,8 +220,8 @@ input:focus, select:focus { box-shadow:0 0 0 3px rgba(60,198,183,.2); border-col
 
 
 
-/* v5.2.6 top menu and compact stat strip */
-.top-actions { grid-template-columns:repeat(4, 102px); }
+/* v5.2.7 hamburger menu and compact stat strip */
+.top-actions { grid-template-columns:repeat(3, 112px); }
 .menu-modal-box { width:min(620px,100%); }
 .menu-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
 .menu-tile { border:1px solid var(--line); background:#fff; border-radius:16px; padding:14px; min-height:76px; display:flex; align-items:center; gap:12px; text-align:left; color:var(--navy); box-shadow:0 6px 16px rgba(37,36,93,.055); }
@@ -230,7 +230,7 @@ input:focus, select:focus { box-shadow:0 0 0 3px rgba(60,198,183,.2); border-col
 .menu-tile strong { display:block; font-size:15px; color:var(--navy2); }
 .menu-tile small { display:block; margin-top:3px; color:var(--muted); font-weight:800; }
 @media(max-width:760px) {
-  .top-actions { grid-template-columns:repeat(4,minmax(0,1fr)); gap:6px; }
+  .top-actions { grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; }
   .action-tile { min-height:54px; border-radius:12px; font-size:11px; gap:3px; }
   .action-tile .ico { font-size:20px; }
   .metrics { display:flex; grid-template-columns:none; overflow-x:auto; gap:7px; margin-bottom:10px; padding:0 0 4px; -webkit-overflow-scrolling:touch; scrollbar-width:thin; }
@@ -266,7 +266,6 @@ input:focus, select:focus { box-shadow:0 0 0 3px rgba(60,198,183,.2); border-col
     <div class="top-actions">
       <button class="action-tile" id="scanBtn"><span class="ico">📷</span><span>Scan</span></button>
       <button class="action-tile" id="addBtn"><span class="ico">➕</span><span>Add Item</span></button>
-      <button class="action-tile" id="shoppingTopBtn"><span class="ico">🛒</span><span>Shopping</span></button>
       <button class="action-tile" id="menuBtn"><span class="ico">☰</span><span>Menu</span></button>
     </div>
   </header>
@@ -336,11 +335,14 @@ input:focus, select:focus { box-shadow:0 0 0 3px rgba(60,198,183,.2); border-col
       <section class="panel" id="mealIdeasPanel"><div class="side-title"><h3>🍽️ Meal Ideas</h3><button id="refreshMealIdeasInline">Refresh →</button></div><div class="mini-list" id="mealIdeasList"></div></section>
     </aside>
   </main>
-  <footer class="footer"><div id="lastBackup">📅 Built-in backup: 2026-06-14T15:36:40.394Z</div><div>💚 All changes saved locally</div><div>StockSmart v5.2.6</div></footer>
+  <footer class="footer"><div id="lastBackup">📅 Built-in backup: 2026-06-14T15:36:40.394Z</div><div>💚 All changes saved locally</div><div>StockSmart v5.2.7</div></footer>
 </div>
 
 <div class="modal" id="menuModal"><div class="modal-box menu-modal-box"><div class="modal-head"><h3>☰ StockSmart Menu</h3><button class="secondary" id="closeMenuModal">Close</button></div><div class="modal-body">
   <div class="menu-grid">
+    <button class="menu-tile" id="scanMenuBtn" type="button"><span class="ico">📷</span><span><strong>Scan</strong><small>Add or check an item</small></span></button>
+    <button class="menu-tile" id="addMenuBtn" type="button"><span class="ico">➕</span><span><strong>Add Item</strong><small>Enter an item manually</small></span></button>
+    <button class="menu-tile" id="shoppingMenuBtn" type="button"><span class="ico">🛒</span><span><strong>Shopping List</strong><small>View or add needed items</small></span></button>
     <button class="menu-tile" id="backupBtn" type="button"><span class="ico">⬇️</span><span><strong>Backup</strong><small>Save a JSON copy</small></span></button>
     <label class="menu-tile" for="restoreInput"><span class="ico">⬆️</span><span><strong>Restore</strong><small>Load a backup file</small></span><input class="hidden-input" id="restoreInput" type="file" accept=".json,application/json"></label>
     <button class="menu-tile" id="recoverBtn" type="button"><span class="ico">♻️</span><span><strong>Recover</strong><small>Reload built-in backup</small></span></button>
@@ -601,7 +603,7 @@ function openAppMenu() { openModal("menuModal"); }
 function closeAppMenu() { closeModal("menuModal"); }
 function runFromMenu(fn) { closeAppMenu(); setTimeout(fn, 50); }
 
-function init() { CATEGORIES.forEach(c=>categoryFilter.insertAdjacentHTML("beforeend",`<option value="${c}">${c==="All"?"All Categories":c}</option>`)); CATEGORIES.filter(c=>c!=="All").forEach(c=>{formCategory.insertAdjacentHTML("beforeend",`<option>${c}</option>`); shopCategory.insertAdjacentHTML("beforeend",`<option>${c}</option>`);}); LOCATIONS.forEach(l=>{formLocation.insertAdjacentHTML("beforeend",`<option>${l}</option>`); shopLocation.insertAdjacentHTML("beforeend",`<option>${l}</option>`);}); addBtn.onclick=openAdd; scanBtn.onclick=()=>openScanner("add"); menuBtn.onclick=openAppMenu; closeMenuModal.onclick=closeAppMenu; document.querySelectorAll(".scan-mode-btn").forEach(btn=>btn.onclick=()=>setBarcodeMode(btn.dataset.barcodeMode)); shoppingTopBtn.onclick=showShopping; backupBtn.onclick=()=>{closeAppMenu(); backup();}; restoreInput.onchange=e=>{restoreFile(e.target.files[0]); closeAppMenu();}; recoverBtn.onclick=()=>{closeAppMenu(); recover();}; totalCard.onclick=()=>{state.metricFilter=null;state.activeLocation="All";state.grouped=false;showInventory();}; groupedCard.onclick=()=>{state.grouped=true;showInventory();}; expiringCard.onclick=()=>showInventory("expiring"); expiredCard.onclick=()=>showInventory("expired"); shoppingCard.onclick=showShopping; addShoppingBtn.onclick=openShoppingAdd; document.querySelectorAll(".loc-btn").forEach(btn=>btn.onclick=()=>{state.activeLocation=btn.dataset.location;state.metricFilter=null;state.mode="inventory";state.limit=10;render();}); searchInput.oninput=e=>{state.search=e.target.value;state.limit=10;render();}; categoryFilter.onchange=e=>{state.activeCategory=e.target.value;state.limit=10;render();}; sortSelect.onchange=e=>{state.sort=e.target.value;render();}; toggleGroupedBtn.onclick=()=>{state.grouped=!state.grouped;clearSelection();render();}; loadMoreBtn.onclick=()=>{state.limit+=25;render();}; selectAllVisible.onchange=e=>toggleSelectAllVisible(e.target); selectVisibleBtn.onclick=selectVisibleItems; clearSelectionBtn.onclick=clearSelection; deleteSelectedBtn.onclick=deleteSelectedItems; viewExpiringBtn.onclick=()=>showInventory("expiring"); viewAllLocationsBtn.onclick=()=>{state.activeLocation="All";showInventory();}; useFirstBtn.onclick=useFirst; mealIdeasBtn.onclick=()=>mealIdeas(true); refreshMealIdeasInline.onclick=()=>mealIdeas(false); dealsSmartBtn.onclick=weeklyCirculars; dealsMenuBtn.onclick=()=>runFromMenu(weeklyCirculars); familySyncBtn.onclick=familySync; familySyncMenuBtn.onclick=()=>runFromMenu(familySync); installHelpBtn.onclick=installHelp; installHelpMenuBtn.onclick=()=>runFromMenu(installHelp); refreshSmartBtn.onclick=renderSidebar; closeItemModal.onclick=()=>closeModal("itemModal"); cancelItemBtn.onclick=()=>closeModal("itemModal"); saveItemBtn.onclick=saveItem; formOpened.onchange=syncOpenedDateField; closeShoppingModal.onclick=()=>closeModal("shoppingModal"); cancelShoppingBtn.onclick=()=>closeModal("shoppingModal"); saveShoppingBtn.onclick=saveShoppingItem; closeSmartModal.onclick=()=>closeModal("smartModal"); closeScannerBtn.onclick=closeScanner; manualBarcodeBtn.onclick=()=>{const code=manualBarcode.value.replace(/\D/g,""); if(!code)return alert("Enter a barcode number."); handleBarcode(code);}; if("serviceWorker" in navigator) window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js").catch(()=>{})); render(); }
+function init() { CATEGORIES.forEach(c=>categoryFilter.insertAdjacentHTML("beforeend",`<option value="${c}">${c==="All"?"All Categories":c}</option>`)); CATEGORIES.filter(c=>c!=="All").forEach(c=>{formCategory.insertAdjacentHTML("beforeend",`<option>${c}</option>`); shopCategory.insertAdjacentHTML("beforeend",`<option>${c}</option>`);}); LOCATIONS.forEach(l=>{formLocation.insertAdjacentHTML("beforeend",`<option>${l}</option>`); shopLocation.insertAdjacentHTML("beforeend",`<option>${l}</option>`);}); addBtn.onclick=openAdd; scanBtn.onclick=()=>openScanner("add"); menuBtn.onclick=openAppMenu; closeMenuModal.onclick=closeAppMenu; document.querySelectorAll(".scan-mode-btn").forEach(btn=>btn.onclick=()=>setBarcodeMode(btn.dataset.barcodeMode)); scanMenuBtn.onclick=()=>runFromMenu(()=>openScanner("add")); addMenuBtn.onclick=()=>runFromMenu(openAdd); shoppingMenuBtn.onclick=()=>runFromMenu(showShopping); backupBtn.onclick=()=>{closeAppMenu(); backup();}; restoreInput.onchange=e=>{restoreFile(e.target.files[0]); closeAppMenu();}; recoverBtn.onclick=()=>{closeAppMenu(); recover();}; totalCard.onclick=()=>{state.metricFilter=null;state.activeLocation="All";state.grouped=false;showInventory();}; groupedCard.onclick=()=>{state.grouped=true;showInventory();}; expiringCard.onclick=()=>showInventory("expiring"); expiredCard.onclick=()=>showInventory("expired"); shoppingCard.onclick=showShopping; addShoppingBtn.onclick=openShoppingAdd; document.querySelectorAll(".loc-btn").forEach(btn=>btn.onclick=()=>{state.activeLocation=btn.dataset.location;state.metricFilter=null;state.mode="inventory";state.limit=10;render();}); searchInput.oninput=e=>{state.search=e.target.value;state.limit=10;render();}; categoryFilter.onchange=e=>{state.activeCategory=e.target.value;state.limit=10;render();}; sortSelect.onchange=e=>{state.sort=e.target.value;render();}; toggleGroupedBtn.onclick=()=>{state.grouped=!state.grouped;clearSelection();render();}; loadMoreBtn.onclick=()=>{state.limit+=25;render();}; selectAllVisible.onchange=e=>toggleSelectAllVisible(e.target); selectVisibleBtn.onclick=selectVisibleItems; clearSelectionBtn.onclick=clearSelection; deleteSelectedBtn.onclick=deleteSelectedItems; viewExpiringBtn.onclick=()=>showInventory("expiring"); viewAllLocationsBtn.onclick=()=>{state.activeLocation="All";showInventory();}; useFirstBtn.onclick=useFirst; mealIdeasBtn.onclick=()=>mealIdeas(true); refreshMealIdeasInline.onclick=()=>mealIdeas(false); dealsSmartBtn.onclick=weeklyCirculars; dealsMenuBtn.onclick=()=>runFromMenu(weeklyCirculars); familySyncBtn.onclick=familySync; familySyncMenuBtn.onclick=()=>runFromMenu(familySync); installHelpBtn.onclick=installHelp; installHelpMenuBtn.onclick=()=>runFromMenu(installHelp); refreshSmartBtn.onclick=renderSidebar; closeItemModal.onclick=()=>closeModal("itemModal"); cancelItemBtn.onclick=()=>closeModal("itemModal"); saveItemBtn.onclick=saveItem; formOpened.onchange=syncOpenedDateField; closeShoppingModal.onclick=()=>closeModal("shoppingModal"); cancelShoppingBtn.onclick=()=>closeModal("shoppingModal"); saveShoppingBtn.onclick=saveShoppingItem; closeSmartModal.onclick=()=>closeModal("smartModal"); closeScannerBtn.onclick=closeScanner; manualBarcodeBtn.onclick=()=>{const code=manualBarcode.value.replace(/\D/g,""); if(!code)return alert("Enter a barcode number."); handleBarcode(code);}; if("serviceWorker" in navigator) window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js").catch(()=>{})); render(); }
 init();
 </script>
 </body>
