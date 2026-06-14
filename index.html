@@ -130,6 +130,70 @@ input:focus, select:focus { box-shadow:0 0 0 3px rgba(60,198,183,.2); border-col
 #scannerVideo { width:100%; min-height:260px; background:#0b1220; display:block; } .hidden-input { display:none; }
 @media(max-width:1250px) { .topbar { grid-template-columns:1fr; } .top-actions { grid-template-columns:repeat(6, minmax(88px,1fr)); } .metrics { grid-template-columns:repeat(2,1fr); } .dashboard { grid-template-columns:1fr; } .side-stack { position:static; max-height:none; overflow:visible; } }
 @media(max-width:760px) { .app-shell { padding:16px 12px 26px; } .brand img { width:80px; height:80px; border-radius:18px; } .brand h1 { font-size:34px; } .tagline { font-size:15px; } .top-actions { grid-template-columns:repeat(3,1fr); } .action-tile { min-height:76px; } .metrics { grid-template-columns:1fr; } .loc-btn { flex:1; justify-content:center; padding:0 10px; } .search { min-width:100%; } .controls-inline { width:100%; } .controls-inline select { flex:1; min-width:150px; } .table-scroll { max-height:none; } .smart-grid { grid-template-columns:repeat(2,1fr); } .form-grid { grid-template-columns:1fr; } .scan-mode-buttons { grid-template-columns:1fr; } .footer { flex-direction:column; gap:8px; } }
+
+/* v5.2.3 mobile inventory card view */
+@media(max-width:760px) {
+  body { background-attachment:fixed; }
+  .app-shell { padding:12px 10px 24px; }
+  .topbar { gap:12px; margin-bottom:12px; }
+  .brand { gap:12px; }
+  .brand img { width:66px; height:66px; border-radius:16px; }
+  .brand h1 { font-size:32px; letter-spacing:-1px; }
+  .tagline { font-size:14px; margin-top:4px; }
+  .pills { gap:6px; margin-top:8px; }
+  .pill { font-size:11px; padding:6px 9px; }
+  .top-actions { position:sticky; top:0; z-index:50; grid-template-columns:repeat(3,1fr); gap:8px; padding:8px 0; background:rgba(248,251,255,.96); backdrop-filter:blur(10px); }
+  .action-tile { min-height:62px; border-radius:14px; font-size:12px; gap:4px; }
+  .action-tile .ico { font-size:22px; }
+  .metrics { grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px; margin-bottom:12px; }
+  .metric-card { min-height:86px; padding:12px; grid-template-columns:auto 1fr; gap:10px; border-radius:15px; }
+  .metric-card .big-ico { font-size:25px; }
+  .metric-card .label { font-size:10px; letter-spacing:.03em; }
+  .metric-card .num { font-size:25px; margin-top:4px; }
+  .metric-card .view, .metric-card .arrow { display:none; }
+  .location-filter { gap:8px; padding:12px; }
+  .section-title { font-size:11px; }
+  .loc-btn { flex:1 1 calc(50% - 8px); min-height:38px; padding:0 8px; font-size:13px; border-radius:11px; justify-content:center; }
+  .search { min-width:100%; max-width:none; height:42px; }
+  .table-panel { margin-top:12px; background:transparent; box-shadow:none; border:none; padding:0; overflow:visible; }
+  .table-head { flex-direction:column; align-items:stretch; padding:12px; border:1px solid var(--line); border-radius:16px; background:rgba(255,255,255,.9); margin-bottom:10px; }
+  .table-head h2 { font-size:18px; }
+  .controls-inline { width:100%; display:grid; grid-template-columns:1fr 1fr auto; gap:8px; }
+  .controls-inline select { min-width:0; width:100%; height:42px; font-size:13px; }
+  .controls-inline .icon-btn { width:42px; height:42px; }
+  .bulk-bar { margin:0 0 10px; border-radius:14px; border:1px solid var(--line); flex-direction:column; align-items:stretch; }
+  .bulk-left, .bulk-actions { justify-content:space-between; }
+  .table-scroll { max-height:none; overflow:visible; background:transparent; }
+  .table { min-width:0 !important; width:100%; display:block; table-layout:auto; border-collapse:separate; }
+  .table thead { display:none; }
+  .table tbody { display:block; }
+  .table tr { display:block; margin:0 0 12px; border:1px solid var(--line); border-radius:17px; overflow:hidden; background:#fff; box-shadow:0 8px 20px rgba(37,36,93,.06); }
+  .table td { display:flex; justify-content:space-between; align-items:center; gap:12px; width:100% !important; padding:9px 12px; border-bottom:1px solid #edf2f7; font-size:14px; }
+  .table td.select-cell { display:none !important; }
+  .table td.item-cell { display:block; background:linear-gradient(135deg,#fbfdff,#fff); padding:13px 12px; }
+  .table td.item-cell .item-main { align-items:flex-start; }
+  .table td.item-cell .thumb { width:48px; height:48px; border-radius:12px; font-size:23px; }
+  .table td.item-cell .item-name { font-size:15px; line-height:1.25; }
+  .table td.item-cell .item-note { white-space:normal; max-width:none; font-size:12px; line-height:1.35; }
+  .table td.field-cell::before { content:attr(data-label); flex:0 0 auto; color:#667085; font-size:11px; font-weight:950; text-transform:uppercase; letter-spacing:.05em; }
+  .table td.field-cell > *:last-child, .table td.field-cell > strong:last-child { text-align:right; }
+  .table td.actions-cell-wrap { display:block; border-bottom:none; padding:12px; background:#fbfdff; }
+  .actions-cell { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; }
+  .actions-cell .icon-btn { width:100%; height:42px; border-radius:11px; display:flex; align-items:center; justify-content:center; font-weight:900; }
+  .actions-cell .icon-btn::after { content:attr(data-mobile-label); margin-left:6px; font-size:12px; font-weight:900; }
+  .load-more { width:100%; margin:6px 0 12px; padding:13px 18px; background:#fff; }
+  .side-stack { gap:12px; margin-top:12px; }
+  .side-stack .panel { border-radius:16px; }
+  .mini-list { max-height:none; }
+  .breakdown-row { grid-template-columns:88px 1fr 70px; font-size:13px; }
+  .modal { padding:10px; align-items:flex-end; }
+  .modal-box { max-height:92vh; border-radius:18px 18px 0 0; }
+  .modal-head { padding:14px 16px; }
+  .modal-body { padding:16px; }
+  #scannerVideo { min-height:230px; }
+  .footer { font-size:12px; text-align:center; }
+}
+
 </style>
 </head>
 <body>
@@ -222,7 +286,7 @@ input:focus, select:focus { box-shadow:0 0 0 3px rgba(60,198,183,.2); border-col
       <section class="panel" id="mealIdeasPanel"><div class="side-title"><h3>🍽️ Meal Ideas</h3><button id="refreshMealIdeasInline">Refresh →</button></div><div class="mini-list" id="mealIdeasList"></div></section>
     </aside>
   </main>
-  <footer class="footer"><div id="lastBackup">📅 Built-in backup: 2026-06-14T15:36:40.394Z</div><div>💚 All changes saved locally</div><div>StockSmart v5.2.1</div></footer>
+  <footer class="footer"><div id="lastBackup">📅 Built-in backup: 2026-06-14T15:36:40.394Z</div><div>💚 All changes saved locally</div><div>StockSmart v5.2.3</div></footer>
 </div>
 
 <div class="modal" id="itemModal"><div class="modal-box"><div class="modal-head"><h3 id="itemModalTitle">Add Item</h3><button class="secondary" id="closeItemModal">Close</button></div><div class="modal-body">
@@ -311,13 +375,16 @@ function findInventoryMatches(barcode, productName="") {
 }
 function showInventoryCheckResult(barcode, lookup, matchResult) {
   const productName = lookup?.name || "";
+  const safeBarcode = encodeURIComponent(String(barcode || ""));
   smartModalTitle.textContent = "🛒 Inventory Check";
   const header = `<p style="margin-top:0"><strong>Scanned:</strong> ${esc(barcode)}${productName?`<br><strong>Product:</strong> ${esc(productName)}`:""}</p>`;
+  const addButtonLabel = matchResult.matches.length ? "Add this scanned item anyway" : "Add this scanned item";
+  const addButton = `<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px"><button class="primary" onclick="startScannedAdd(decodeURIComponent('${safeBarcode}'))">➕ ${addButtonLabel}</button><button class="secondary" onclick="closeModal('smartModal'); openScanner('check');">Scan another item</button></div>`;
   if(matchResult.matches.length) {
     const method = matchResult.type==="upc" ? "exact UPC match" : "similar product-name match";
-    smartModalBody.innerHTML = header + `<p style="color:#157a37;font-weight:900">Found ${matchResult.matches.length} ${method}${matchResult.matches.length===1?"":"es"} in your inventory.</p>` + matchResult.matches.map(i=>`<div class="recipe-card"><h4>${esc(i.name)}</h4><div><strong>Qty:</strong> ${esc(i.quantity)} &nbsp; <strong>Location:</strong> ${esc(i.location)} &nbsp; <strong>Expires:</strong> ${esc(i.expDate?niceDate(i.expDate):"No date")}</div><div style="color:var(--muted);margin-top:6px">${esc(i.notes||"")}</div></div>`).join("");
+    smartModalBody.innerHTML = header + `<p style="color:#157a37;font-weight:900">Found ${matchResult.matches.length} ${method}${matchResult.matches.length===1?"":"es"} in your inventory.</p>` + matchResult.matches.map(i=>`<div class="recipe-card"><h4>${esc(i.name)}</h4><div><strong>Qty:</strong> ${esc(i.quantity)} &nbsp; <strong>Location:</strong> ${esc(i.location)} &nbsp; <strong>Expires:</strong> ${esc(i.expDate?niceDate(i.expDate):"No date")}</div><div style="color:var(--muted);margin-top:6px">${esc(i.notes||"")}</div></div>`).join("") + `<p style="color:var(--muted);font-size:13px">If this is a new package or a different size/flavor, you can still add it as a new inventory item.</p>` + addButton;
   } else {
-    smartModalBody.innerHTML = header + `<p style="color:#c91f35;font-weight:900">No matching inventory item was found.</p><p style="color:var(--muted)">I checked UPCs saved in item notes/data first. Since there was no exact UPC match, I also compared the scanned product name against your inventory names when a product name was available.</p><button class="primary" onclick="startScannedAdd('${esc(barcode)}')">Add this scanned item</button>`;
+    smartModalBody.innerHTML = header + `<p style="color:#c91f35;font-weight:900">No matching inventory item was found.</p><p style="color:var(--muted)">I checked UPCs saved in item notes/data first. Since there was no exact UPC match, I also compared the scanned product name against your inventory names when a product name was available.</p>` + addButton;
   }
   openModal("smartModal");
 }
@@ -345,8 +412,8 @@ function renderSummary() { const c=getCounts(); entriesPill.textContent=`${items
 function renderLocations() { document.querySelectorAll(".loc-btn").forEach(btn=>btn.classList.toggle("active",btn.dataset.location===state.activeLocation)); }
 function renderTable() { const list=filteredItems(); const visible=list.slice(0,state.limit); listTitle.textContent=state.mode==="shopping"?`Shopping List (${shoppingList.length} items)`:`Inventory (${list.length} items)`; if(addShoppingBtn) addShoppingBtn.style.display=state.mode==="shopping"?"inline-flex":"none"; if(toggleGroupedBtn) toggleGroupedBtn.style.display=state.mode==="shopping"?"none":"grid"; loadMoreBtn.style.display=state.mode==="shopping"||state.limit>=list.length?"none":"block"; if(state.mode==="shopping"){ bulkBar.classList.remove("show"); selectedIds.clear(); itemTableBody.innerHTML=shoppingList.length?shoppingList.map(shoppingRow).join(""):`<tr><td colspan="9" style="text-align:center;padding:38px;color:var(--muted)">Shopping list is empty. Use “+ Shopping Item” to add something even if it was never in inventory.</td></tr>`; return; } renderBulkControls(visible); itemTableBody.innerHTML=visible.length?visible.map(itemRow).join(""):`<tr><td colspan="9" style="text-align:center;padding:38px;color:var(--muted)">No items found.</td></tr>`; }
 function rowIds(item) { return item.ids || [item.id]; }
-function itemRow(item) { const exp=expInfo(item.expDate); const groupedCount=item.entries?item.entries.length:1; const ids=rowIds(item); const checked=ids.every(id=>selectedIds.has(Number(id)))?"checked":""; return `<tr><td class="select-cell"><input class="bulk-check item-select" type="checkbox" ${checked} data-ids="${ids.join(',')}" onchange="toggleItemSelection(this)" title="Select item"></td><td><div class="item-main"><div class="thumb">${thumbHtml(item)}</div><div><div class="item-name">${esc(item.name)}</div><div class="item-note">${esc(item.notes||(groupedCount>1?groupedCount+" grouped entries":""))}</div></div></div></td><td><span class="badge cat">${esc(item.category)}</span></td><td><span class="badge loc">${esc(item.location)}</span></td><td><strong>${item.quantity}</strong></td><td><strong style="color:${exp.cls==="expired"?"#e01931":exp.cls==="exp-soon"?"#e56f00":"var(--navy)"}">${niceDate(item.expDate)}</strong><div style="font-size:12px;color:${exp.cls==="expired"?"#e01931":"var(--muted)"}">${exp.label}</div></td><td><span class="badge ${item.opened?"open":"closed"}">${item.opened?"Opened":"Unopened"}</span></td><td class="added-text">${addedDateText(item.addedAt)}</td><td><div class="actions-cell"><button class="icon-btn" onclick="editItem(${item.id})" title="Edit">✎</button><button class="icon-btn" onclick="moveToShopping(${item.id})" title="Move to shopping">🛒</button><button class="icon-btn danger" onclick="deleteItem(${item.id})" title="Delete">🗑</button></div></td></tr>`; }
-function shoppingRow(item) { return `<tr><td class="select-cell"></td><td><div class="item-main"><div class="thumb">🛒</div><div><div class="item-name">${esc(item.name)}</div><div class="item-note">${esc(item.notes||"")}</div></div></div></td><td><span class="badge cat">${esc(item.category||"Other")}</span></td><td><span class="badge loc">${esc(item.location||"")}</span></td><td><strong>${item.quantity?esc(item.quantity):""}</strong></td><td>${item.expDate?niceDate(item.expDate):""}</td><td><span class="badge ${item.completed?"closed":"open"}">${item.completed?"Bought":"Needed"}</span></td><td class="added-text">${addedDateText(item.addedAt)}</td><td><div class="actions-cell"><button class="icon-btn" onclick="toggleShopping('${item.id}')" title="Mark bought/needed">✓</button><button class="icon-btn danger" onclick="deleteShopping('${item.id}')" title="Delete">🗑</button></div></td></tr>`; }
+function itemRow(item) { const exp=expInfo(item.expDate); const groupedCount=item.entries?item.entries.length:1; const ids=rowIds(item); const checked=ids.every(id=>selectedIds.has(Number(id)))?"checked":""; return `<tr><td class="select-cell"><input class="bulk-check item-select" type="checkbox" ${checked} data-ids="${ids.join(',')}" onchange="toggleItemSelection(this)" title="Select item"></td><td class="item-cell"><div class="item-main"><div class="thumb">${thumbHtml(item)}</div><div><div class="item-name">${esc(item.name)}</div><div class="item-note">${esc(item.notes||(groupedCount>1?groupedCount+" grouped entries":""))}</div></div></div></td><td class="field-cell" data-label="Category"><span class="badge cat">${esc(item.category)}</span></td><td class="field-cell" data-label="Location"><span class="badge loc">${esc(item.location)}</span></td><td class="field-cell" data-label="Qty"><strong>${item.quantity}</strong></td><td class="field-cell" data-label="Expiration"><div style="text-align:right"><strong style="color:${exp.cls==="expired"?"#e01931":exp.cls==="exp-soon"?"#e56f00":"var(--navy)"}">${niceDate(item.expDate)}</strong><div style="font-size:12px;color:${exp.cls==="expired"?"#e01931":"var(--muted)"}">${exp.label}</div></div></td><td class="field-cell" data-label="Status"><span class="badge ${item.opened?"open":"closed"}">${item.opened?"Opened":"Unopened"}</span></td><td class="field-cell added-text" data-label="Added"><span>${addedDateText(item.addedAt)}</span></td><td class="actions-cell-wrap"><div class="actions-cell"><button class="icon-btn" data-mobile-label="Edit" onclick="editItem(${item.id})" title="Edit">✎</button><button class="icon-btn" data-mobile-label="Shop" onclick="moveToShopping(${item.id})" title="Move to shopping">🛒</button><button class="icon-btn danger" data-mobile-label="Delete" onclick="deleteItem(${item.id})" title="Delete">🗑</button></div></td></tr>`; }
+function shoppingRow(item) { return `<tr><td class="select-cell"></td><td class="item-cell"><div class="item-main"><div class="thumb">🛒</div><div><div class="item-name">${esc(item.name)}</div><div class="item-note">${esc(item.notes||"")}</div></div></div></td><td class="field-cell" data-label="Category"><span class="badge cat">${esc(item.category||"Other")}</span></td><td class="field-cell" data-label="Location"><span class="badge loc">${esc(item.location||"")}</span></td><td class="field-cell" data-label="Qty"><strong>${item.quantity?esc(item.quantity):""}</strong></td><td class="field-cell" data-label="Expiration"><span>${item.expDate?niceDate(item.expDate):""}</span></td><td class="field-cell" data-label="Status"><span class="badge ${item.completed?"closed":"open"}">${item.completed?"Bought":"Needed"}</span></td><td class="field-cell added-text" data-label="Added"><span>${addedDateText(item.addedAt)}</span></td><td class="actions-cell-wrap"><div class="actions-cell"><button class="icon-btn" data-mobile-label="Bought" onclick="toggleShopping('${item.id}')" title="Mark bought/needed">✓</button><button class="icon-btn danger" data-mobile-label="Delete" onclick="deleteShopping('${item.id}')" title="Delete">🗑</button></div></td></tr>`; }
 function renderSidebar() { const exp=items.filter(i=>i.expDate&&daysUntil(i.expDate)>=0&&daysUntil(i.expDate)<=14).sort((a,b)=>new Date(a.expDate)-new Date(b.expDate)).slice(0,8); expiringList.innerHTML=exp.length?exp.map(i=>`<div class="mini-row"><div class="name">${esc(i.name)}</div><div class="date">${niceDate(i.expDate)}</div><div class="count-pill">${i.quantity}</div></div>`).join(""):`<div style="color:var(--muted)">No items expiring soon.</div>`; const counts=getLocationCounts(), max=Math.max(1,...Object.values(counts)), colors={Fridge:"#4c9cf5",Pantry:"#f39a46",Freezer:"#3479ff",Counter:"#8c7cf0",Household:"#3ca56a",Other:"#8d98a7"}; breakdownList.innerHTML=Object.entries(counts).map(([loc,count])=>`<div class="breakdown-row"><div><strong>${loc==="Fridge"?"❄️":loc==="Freezer"?"❄️":loc==="Pantry"?"🏠":loc==="Household"?"🧻":loc==="Counter"?"📦":"⬡"} ${loc}</strong></div><div class="progress"><span style="width:${Math.round((count/max)*100)}%;background:${colors[loc]}"></span></div><div style="text-align:right">${count} items</div></div>`).join(""); }
 function recipeIdeas() { const names=items.map(i=>(i.name||"").toLowerCase()); const has=arr=>arr.some(t=>names.some(n=>n.includes(t))); const ideas=[]; if(has(["chicken"])&&has(["rice","yellow rice"])) ideas.push({title:"Chicken & Rice Bowls", ingredients:["Chicken","Rice or yellow rice","Frozen vegetables","Sauce or seasoning"], steps:["Cook rice according to package directions.","Heat chicken and vegetables.","Top rice with chicken, vegetables, and sauce."]}); if(has(["pasta","ziti","elbow","fettuccine","angel hair","orzo"])&&has(["tomato sauce","crushed tomatoes","vodka sauce","alfredo"])) ideas.push({title:"Pantry Pasta Night", ingredients:["Pasta","Sauce or canned tomatoes","Cheese","Optional meatballs or vegetables"], steps:["Boil pasta.","Warm sauce and add optional protein/vegetables.","Combine and top with cheese."]}); if(has(["yogurt"])&&has(["strawberries","blueberries","mixed fruit","granola"])) ideas.push({title:"Yogurt Parfaits or Smoothies", ingredients:["Yogurt","Frozen fruit","Granola or chia/flax","Milk or almond milk"], steps:["Layer yogurt with fruit and granola, or blend yogurt with fruit and milk.","Use soon-to-expire yogurt first."]}); if(has(["ground beef","taco","tortilla"])) ideas.push({title:"Taco or Quesadilla Night", ingredients:["Ground beef or chicken","Taco sauce/seasoning","Cheese","Rice/beans/tortillas"], steps:["Cook protein with seasoning.","Build tacos, bowls, or quesadillas.","Add sour cream, cheese, rice, or beans."]}); if(has(["soup","broth","stock"])&&has(["egg noodles","orzo","rice"])) ideas.push({title:"Soup Stretch Meal", ingredients:["Soup or broth","Noodles/rice/orzo","Vegetables","Protein if available"], steps:["Heat broth or soup.","Add noodles/rice and vegetables.","Simmer until tender and season to taste."]}); if(has(["nuggets","chicken patties","pizza","mac & cheese","ravioli"])) ideas.push({title:"Fast Freezer Dinner", ingredients:["Freezer main","Vegetable side","Fruit or yogurt"], steps:["Heat freezer main.","Add a vegetable or fruit side.","Use this on a busy night."]}); ideas.push({title:"Use-First Snack Plate", ingredients:["Expiring dairy/snacks","Fruit","Crackers"], steps:["Pick 2 to 3 items expiring soon.","Make a small snack plate before opening something new."]}); const shift=state.mealSeed%ideas.length; return [...ideas.slice(shift),...ideas.slice(0,shift)].slice(0,4); }
 function renderMealIdeasInline() { const ideas=recipeIdeas(); mealIdeasList.innerHTML=ideas.map(i=>`<div class="mini-row" style="grid-template-columns:1fr"><div class="name">${esc(i.title)}</div><div style="color:var(--muted);font-size:13px">${esc(i.ingredients.slice(0,3).join(", "))}</div></div>`).join(""); }
