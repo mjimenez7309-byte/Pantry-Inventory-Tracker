@@ -1,5 +1,52 @@
-const CACHE_NAME = "stocksmart-v5";
-const APP_FILES = ["./","./index.html","./manifest.json","./icon.png","https://unpkg.com/@zxing/library@0.20.0/umd/index.min.js"];
-self.addEventListener("install", event => { event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(APP_FILES).catch(() => null))); self.skipWaiting(); });
-self.addEventListener("activate", event => { event.waitUntil(caches.keys().then(keys => Promise.all(keys.map(key => key !== CACHE_NAME ? caches.delete(key) : null)))); self.clients.claim(); });
-self.addEventListener("fetch", event => { event.respondWith(caches.match(event.request).then(cached => cached || fetch(event.request).then(response => { const copy = response.clone(); caches.open(CACHE_NAME).then(cache => { if (event.request.method === "GET") cache.put(event.request, copy).catch(() => null); }); return response; }).catch(() => caches.match("./index.html")))); });
+const CACHE_NAME = "stocksmart-v5-2-0-20260614-153640";
+const APP_SHELL = [
+  "./",
+  "./index.html",
+  "./manifest.json",
+  "./icon.png"
+];
+
+self.addEventListener("install", event => {
+  self.skipWaiting();
+  event.waitUntil(
+    caches.open(CACHE_NAME).then(cache => cache.addAll(APP_SHELL).catch(() => undefined))
+  );
+});
+
+self.addEventListener("activate", event => {
+  event.waitUntil(
+    caches.keys().then(keys => Promise.all(
+      keys.filter(key => key.startsWith("stocksmart-") && key !== CACHE_NAME).map(key => caches.delete(key))
+    )).then(() => self.clients.claim())
+  );
+});
+
+self.addEventListener("fetch", event => {
+  const request = event.request;
+  if (request.method !== "GET") return;
+
+  const url = new URL(request.url);
+
+  if (request.mode === "navigate" || url.pathname.endsWith("/index.html")) {
+    event.respondWith(
+      fetch(request)
+        .then(response => {
+          const copy = response.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put("./index.html", copy));
+          return response;
+        })
+        .catch(() => caches.match("./index.html"))
+    );
+    return;
+  }
+
+  if (url.origin === location.origin) {
+    event.respondWith(
+      caches.match(request).then(cached => cached || fetch(request).then(response => {
+        const copy = response.clone();
+        caches.open(CACHE_NAME).then(cache => cache.put(request, copy));
+        return response;
+      }))
+    );
+  }
+});
