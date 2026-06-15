@@ -159,9 +159,9 @@ input:focus, select:focus { box-shadow:0 0 0 3px rgba(60,198,183,.2); border-col
   .table-panel { margin-top:12px; background:transparent; box-shadow:none; border:none; padding:0; overflow:visible; }
   .table-head { flex-direction:column; align-items:stretch; padding:12px; border:1px solid var(--line); border-radius:16px; background:rgba(255,255,255,.9); margin-bottom:10px; }
   .table-head h2 { font-size:18px; }
-  .controls-inline { width:100%; display:grid; grid-template-columns:1fr 1fr auto; gap:8px; }
+  .controls-inline { width:100%; display:grid; grid-template-columns:1fr 1fr; gap:8px; }
   .controls-inline select { min-width:0; width:100%; height:42px; font-size:13px; }
-  .controls-inline .icon-btn { width:42px; height:42px; }
+  .controls-inline .icon-btn { width:100%; height:42px; }
   .bulk-bar { margin:0 0 10px; border-radius:14px; border:1px solid var(--line); flex-direction:column; align-items:stretch; }
   .bulk-left, .bulk-actions { justify-content:space-between; }
   .table-scroll { max-height:none; overflow:visible; background:transparent; }
@@ -249,6 +249,7 @@ input:focus, select:focus { box-shadow:0 0 0 3px rgba(60,198,183,.2); border-col
 /* v5.2.8 continuous scanning and easier date pickers */
 .date-parts { display:grid; grid-template-columns:1.1fr .8fr .9fr; gap:8px; margin-top:6px; }
 .date-parts select { width:100%; height:44px; padding:0 9px; }
+.tag-badge { display:inline-flex; align-items:center; border-radius:999px; padding:5px 8px; font-size:11px; font-weight:900; background:#f1f5ff; color:#283e99; border:1px solid #dbe5ff; margin-top:4px; }
 .continuous-scan-option { display:flex; align-items:center; gap:9px; margin:10px 0 0; color:var(--navy); font-weight:850; }
 .continuous-scan-option input { width:18px; height:18px; accent-color:var(--teal); }
 @media(max-width:760px) { .date-parts { grid-template-columns:1fr 1fr 1fr; gap:6px; } .date-parts select { font-size:13px; padding:0 6px; } }
@@ -317,6 +318,7 @@ input:focus, select:focus { box-shadow:0 0 0 3px rgba(60,198,183,.2); border-col
           <h2 id="listTitle">Inventory</h2>
           <div class="controls-inline">
             <select id="categoryFilter"></select>
+            <select id="mealTagFilter"></select>
             <select id="sortSelect">
               <option value="expSoon">Sort: Expiration (Soonest)</option>
               <option value="name">Sort: Name</option>
@@ -381,6 +383,7 @@ input:focus, select:focus { box-shadow:0 0 0 3px rgba(60,198,183,.2); border-col
   <div class="form-grid">
     <label class="full">Item name<input id="formName"></label>
     <label>Category<select id="formCategory"></select></label>
+    <label>Meal tag<select id="formMealTag"></select></label>
     <label>Location<select id="formLocation"></select></label>
     <label>Quantity<input id="formQty" type="number" min="0"></label>
     <label>Expiration date<input id="formExp" type="hidden"><div class="date-parts" data-date-for="formExp"></div></label>
@@ -415,20 +418,110 @@ const SHOPPING_KEY = "stocksmart_shopping_v5_current_20260614T153640";
 const NEXT_ID_KEY = "stocksmart_next_id_v5_current_20260614T153640";
 const CATEGORIES = ["All","Dairy","Produce","Meat","Frozen","Pantry","Beverages","Snacks","Other","Household"];
 const LOCATIONS = ["Fridge","Freezer","Pantry","Counter","Household","Other"];
+const MEAL_TAGS = [
+  ["All","All Meal Tags"],
+  ["protein-chicken-raw","Chicken"],
+  ["protein-chicken-prepared","Prepared Chicken"],
+  ["protein-meat","Beef/Pork/Sausage"],
+  ["fish","Fish/Seafood"],
+  ["grain-rice","Rice"],
+  ["pasta","Pasta/Noodles"],
+  ["tortilla","Tortillas/Wraps"],
+  ["bread","Bread"],
+  ["cheese","Cheese"],
+  ["milk","Milk"],
+  ["eggs","Eggs"],
+  ["yogurt","Yogurt"],
+  ["fruit","Fruit"],
+  ["vegetable","Vegetables"],
+  ["frozen-vegetable","Frozen Vegetables"],
+  ["soup","Soup"],
+  ["broth","Broth/Stock"],
+  ["beans","Beans"],
+  ["pasta-sauce","Pasta Sauce/Tomatoes"],
+  ["taco-sauce","Taco/Salsa"],
+  ["sauce-seasoning","Sauces/Seasoning"],
+  ["mac-cheese","Mac & Cheese"],
+  ["breakfast-carb","Pancakes/Waffles"],
+  ["freezer-main","Frozen Meals"],
+  ["cereal","Cereal"],
+  ["snack","Snacks"],
+  ["dessert","Dessert"],
+  ["dessert-topping","Dessert Topping"],
+  ["drink","Drinks"],
+  ["household","Household"],
+  ["not-for-meals","Not for Meals"],
+  ["review-needed","Review Needed"]
+];
+function mealTagLabel(tag) { return (MEAL_TAGS.find(t=>t[0]===tag)||[tag,tag])[1]; }
 let items = loadItems(), shoppingList = loadShopping();
 let nextId = Number(localStorage.getItem(NEXT_ID_KEY)) || Math.max(0,...items.map(i=>Number(i.id)||0))+1;
-let state = {activeLocation:"All", activeCategory:"All", search:"", sort:"expSoon", mode:"inventory", grouped:false, limit:10, metricFilter:null, mealSeed:0};
+let state = {activeLocation:"All", activeCategory:"All", activeMealTag:"All", search:"", sort:"expSoon", mode:"inventory", grouped:false, limit:10, metricFilter:null, mealSeed:0};
 const selectedIds = new Set();
 let editingId = null, codeReader = null;
 let pendingContinuousScan = false;
 
 function loadItems() { try { const saved=JSON.parse(localStorage.getItem(STORAGE_KEY)||"null"); if(Array.isArray(saved)&&saved.length) return normalizeItems(saved); } catch{} return normalizeItems(DEFAULT_ITEMS); }
 function loadShopping() { try { const saved=JSON.parse(localStorage.getItem(SHOPPING_KEY)||"null"); if(Array.isArray(saved)) return saved; } catch{} return DEFAULT_SHOPPING || []; }
-function normalizeItems(list) { return (list||[]).map(item=>({id:item.id,name:item.name||"",category:item.category||"Other",location:item.location||"Pantry",quantity:Number(item.quantity||0),expDate:item.expDate||"",opened:!!item.opened,openedDate:item.openedDate||item.openDate||item.dateOpened||"",notes:item.notes||"",addedAt:item.addedAt||item.dateAdded||"Starter list",imageUrl:item.imageUrl||item.image||"",barcode:item.barcode||item.upc||""})); }
+function normalizeItems(list) { return (list||[]).map(item=>{ const base={id:item.id,name:item.name||"",category:item.category||"Other",location:item.location||"Pantry",quantity:Number(item.quantity||0),expDate:item.expDate||"",opened:!!item.opened,openedDate:item.openedDate||item.openDate||item.dateOpened||"",notes:item.notes||"",addedAt:item.addedAt||item.dateAdded||"Starter list",imageUrl:item.imageUrl||item.image||"",barcode:item.barcode||item.upc||""}; base.mealTag = item.mealTag || item.ingredientTag || inferMealTagFromName(base); return base; }); }
 function saveAll() { localStorage.setItem(STORAGE_KEY,JSON.stringify(items)); localStorage.setItem(SHOPPING_KEY,JSON.stringify(shoppingList)); localStorage.setItem(NEXT_ID_KEY,String(nextId)); }
 function esc(v) { return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c])); }
 function niceDate(d) { if(!d) return "No date"; return new Date(d+"T12:00:00").toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"}); }
 
+
+function inferMealTagFromName(itemOrName, product=null) {
+  const name = typeof itemOrName === "string" ? itemOrName : `${itemOrName?.name||""} ${itemOrName?.notes||""}`;
+  const cat = String(typeof itemOrName === "object" ? itemOrName?.category||"" : "").toLowerCase();
+  const loc = String(typeof itemOrName === "object" ? itemOrName?.location||"" : "").toLowerCase();
+  const text = product ? productLookupText(product, name) : String(name||"").toLowerCase();
+  const has = (re)=>re.test(text);
+  // Strong exclusions first so cereal/dessert/household cannot become meal staples.
+  if(has(/paper towel|toilet paper|bath tissue|facial tissue|wipe|diaper|cleaner|detergent|dish soap|fabric softener|trash bag|laundry|dawn|cascade|downy|bounty/)) return "household";
+  if(has(/rice krispies|rice crispy|krispies|cheerios|krave|life cinnamon|cereal/)) return "cereal";
+  if(has(/magic shell|ice cream topping|syrup|chocolate syrup|sprinkles|icing|cake mix|chocolate chips/)) return "dessert";
+  if(has(/chips|goldfish|cracker|cookie|cookies|muffin|granola bar|protein bar|fruit bar|puffs|cheese ball|pringles|bamba|nuts|cashew|peanut|snack/)) return "snack";
+  if(has(/coffee|tea|water|juice|drink|beverage|soda|crystal light|lemonade/)) return "drink";
+  if(has(/chicken noodle soup|cream of chicken soup|split pea|broccoli cheese soup|spaghettios|chef boyardee/)) return "soup";
+  if(has(/chicken breast|ground chicken|rotisserie chicken|chicken thigh|chicken tenderloin/)) return "protein-chicken-raw";
+  if(has(/chicken nugget|chicken patty|breaded chicken/)) return "protein-chicken-prepared";
+  if(has(/ground beef|beef|pork|sausage|bacon|hot dog|frank|meatball|turkey|pork roll|pork chop/)) return "protein-meat";
+  if(has(/tilapia|salmon|fish|shrimp|seafood|tuna/)) return "fish";
+  if(has(/yellow rice|jasmine rice|long grain rice|white rice|brown rice|spanish rice|goya rice|enriched rice/)) return "grain-rice";
+  if(has(/flour tortilla|tortilla|wrap|taco shell|hard shell/)) return "tortilla";
+  if(has(/bread|roll|english muffin|bun/)) return "bread";
+  if(has(/pasta|ziti|elbow macaroni|fettuccine|angel hair|orzo|egg noodle|ravioli|spaghetti/)) return "pasta";
+  if(has(/mac and cheese|macaroni and cheese|mac & cheese|mac cheese/)) return "mac-cheese";
+  if(has(/pancake|waffle|french toast/)) return "breakfast-carb";
+  if(has(/cheddar|mozzarella|parmesan|american cheese|string cheese|babybel|cheese stick|cream cheese|cheese/)) return "cheese";
+  if(has(/yogurt|yoghurt|stonyfield/)) return "yogurt";
+  if(has(/sour cream/)) return "sour-cream";
+  if(has(/milk|almondmilk|almond milk|lactaid/)) return "milk";
+  if(has(/egg|eggs/)) return "eggs";
+  if(has(/broccoli|corn|peas|mixed vegetable|vegetable|cauliflower|carrot|lettuce|green bean/)) return loc==="freezer" ? "frozen-vegetable" : "vegetable";
+  if(cat==="produce" || has(/strawberr|blueberr|blackberr|apple|banana|grape|orange|peach|kiwi|fruit/)) return "fruit";
+  if(has(/tomato sauce|crushed tomato|vodka sauce|alfredo|pasta sauce|diced tomato/)) return "pasta-sauce";
+  if(has(/taco sauce|salsa|taco seasoning|sofrito/)) return "taco-sauce";
+  if(has(/broth|stock/)) return "broth";
+  if(has(/beans|black beans|pinto beans/)) return "beans";
+  if(has(/bbq sauce|dipping sauce|ranch|mustard|ketchup|soy sauce|seasoning|vinegar|oil/)) return "sauce-seasoning";
+  if(loc==="freezer" && has(/pizza|pupusa|mozzarella stick|frozen meal|ice cream bar/)) return "freezer-main";
+  if(cat==="household") return "household";
+  if(cat==="snacks") return "snack";
+  if(cat==="beverages") return "drink";
+  return "review-needed";
+}
+function migrateMealTags() {
+  let changed=false;
+  items = items.map(item=>{
+    if(!item.mealTag || item.mealTag==="review-needed") {
+      const mealTag = inferMealTagFromName(item);
+      if(item.mealTag !== mealTag) changed=true;
+      return {...item, mealTag};
+    }
+    return item;
+  });
+  if(changed) saveAll();
+}
 function cleanBarcode(v) { return String(v||"").replace(/\D/g,""); }
 function extractBarcodes(item) {
   const text = `${item?.barcode||""} ${item?.upc||""} ${item?.notes||""}`;
@@ -502,13 +595,13 @@ function groupKey(item) { return `${normalizeName(item.name)}|${item.category}|$
 function getGrouped(list) { const map=new Map(); list.forEach(item=>{const k=groupKey(item); if(!map.has(k))map.set(k,{...item,ids:[],quantity:0,entries:[]}); const g=map.get(k); g.ids.push(item.id); g.quantity+=Number(item.quantity||0); g.entries.push(item); const soonest=g.entries.filter(e=>e.expDate).sort((a,b)=>new Date(a.expDate)-new Date(b.expDate))[0]; if(soonest)g.expDate=soonest.expDate; }); return Array.from(map.values()); }
 function getCounts() { return {expired:items.filter(i=>i.expDate&&daysUntil(i.expDate)<0).length, expiring:items.filter(i=>i.expDate&&daysUntil(i.expDate)>=0&&daysUntil(i.expDate)<=14).length, grouped:getGrouped(items).length}; }
 function getLocationCounts() { const base={Fridge:0,Pantry:0,Freezer:0,Counter:0,Household:0,Other:0}; items.forEach(i=>{const loc=base.hasOwnProperty(i.location)?i.location:"Other"; base[loc]+=Number(i.quantity||0);}); return base; }
-function filteredItems() { let list=[...items]; if(state.activeLocation!=="All") list=list.filter(i=>i.location===state.activeLocation||(state.activeLocation==="Household"&&i.category==="Household")); if(state.activeCategory!=="All") list=list.filter(i=>i.category===state.activeCategory); if(state.search){const q=state.search.toLowerCase(); list=list.filter(i=>(i.name||"").toLowerCase().includes(q)||(i.notes||"").toLowerCase().includes(q));} if(state.metricFilter==="expiring") list=list.filter(i=>i.expDate&&daysUntil(i.expDate)>=0&&daysUntil(i.expDate)<=14); if(state.metricFilter==="expired") list=list.filter(i=>i.expDate&&daysUntil(i.expDate)<0); if(state.grouped) list=getGrouped(list); list.sort((a,b)=>{ if(state.sort==="name")return a.name.localeCompare(b.name); if(state.sort==="category")return a.category.localeCompare(b.category); if(state.sort==="location")return a.location.localeCompare(b.location); if(state.sort==="added")return new Date(b.addedAt||0)-new Date(a.addedAt||0); const da=a.expDate?new Date(a.expDate+"T12:00:00"):new Date("2099-01-01"); const db=b.expDate?new Date(b.expDate+"T12:00:00"):new Date("2099-01-01"); return da-db; }); return list; }
+function filteredItems() { let list=[...items]; if(state.activeLocation!=="All") list=list.filter(i=>i.location===state.activeLocation||(state.activeLocation==="Household"&&i.category==="Household")); if(state.activeCategory!=="All") list=list.filter(i=>i.category===state.activeCategory); if(state.activeMealTag!=="All") list=list.filter(i=>(i.mealTag||inferMealTagFromName(i))===state.activeMealTag); if(state.search){const q=state.search.toLowerCase(); list=list.filter(i=>(i.name||"").toLowerCase().includes(q)||(i.notes||"").toLowerCase().includes(q));} if(state.metricFilter==="expiring") list=list.filter(i=>i.expDate&&daysUntil(i.expDate)>=0&&daysUntil(i.expDate)<=14); if(state.metricFilter==="expired") list=list.filter(i=>i.expDate&&daysUntil(i.expDate)<0); if(state.grouped) list=getGrouped(list); list.sort((a,b)=>{ if(state.sort==="name")return a.name.localeCompare(b.name); if(state.sort==="category")return a.category.localeCompare(b.category); if(state.sort==="location")return a.location.localeCompare(b.location); if(state.sort==="added")return new Date(b.addedAt||0)-new Date(a.addedAt||0); const da=a.expDate?new Date(a.expDate+"T12:00:00"):new Date("2099-01-01"); const db=b.expDate?new Date(b.expDate+"T12:00:00"):new Date("2099-01-01"); return da-db; }); return list; }
 function render() { saveAll(); renderSummary(); renderLocations(); renderTable(); renderSidebar(); renderMealIdeasInline(); }
 function renderSummary() { const c=getCounts(); entriesPill.textContent=`${items.length} entries tracked`; soonPill.textContent=`⚡ ${c.expiring} expiring soon`; expiredPill.textContent=`❌ ${c.expired} expired`; totalEntries.textContent=items.length; groupedEntries.textContent=c.grouped; expiringEntries.textContent=c.expiring; expiredEntries.textContent=c.expired; shoppingEntries.textContent=shoppingList.length; useFirstSmall.textContent=`${c.expiring} items`; }
 function renderLocations() { document.querySelectorAll(".loc-btn").forEach(btn=>btn.classList.toggle("active",btn.dataset.location===state.activeLocation)); }
 function renderTable() { const list=filteredItems(); const visible=list.slice(0,state.limit); listTitle.textContent=state.mode==="shopping"?`Shopping List (${shoppingList.length} items)`:`Inventory (${list.length} items)`; if(addShoppingBtn) addShoppingBtn.style.display=state.mode==="shopping"?"inline-flex":"none"; if(toggleGroupedBtn) toggleGroupedBtn.style.display=state.mode==="shopping"?"none":"grid"; loadMoreBtn.style.display=state.mode==="shopping"||state.limit>=list.length?"none":"block"; if(state.mode==="shopping"){ bulkBar.classList.remove("show"); selectedIds.clear(); itemTableBody.innerHTML=shoppingList.length?shoppingList.map(shoppingRow).join(""):`<tr><td colspan="9" style="text-align:center;padding:38px;color:var(--muted)">Shopping list is empty. Use “+ Shopping Item” to add something even if it was never in inventory.</td></tr>`; return; } renderBulkControls(visible); itemTableBody.innerHTML=visible.length?visible.map(itemRow).join(""):`<tr><td colspan="9" style="text-align:center;padding:38px;color:var(--muted)">No items found.</td></tr>`; }
 function rowIds(item) { return item.ids || [item.id]; }
-function itemRow(item) { const exp=expInfo(item.expDate); const groupedCount=item.entries?item.entries.length:1; const ids=rowIds(item); const checked=ids.every(id=>selectedIds.has(Number(id)))?"checked":""; return `<tr><td class="select-cell"><input class="bulk-check item-select" type="checkbox" ${checked} data-ids="${ids.join(',')}" onchange="toggleItemSelection(this)" title="Select item"></td><td class="item-cell"><div class="item-main"><div class="thumb">${thumbHtml(item)}</div><div><div class="item-name">${esc(item.name)}</div><div class="item-note">${esc(item.notes||(groupedCount>1?groupedCount+" grouped entries":""))}</div></div></div></td><td class="field-cell" data-label="Category"><span class="badge cat">${esc(item.category)}</span></td><td class="field-cell" data-label="Location"><span class="badge loc">${esc(item.location)}</span></td><td class="field-cell" data-label="Qty"><strong>${item.quantity}</strong></td><td class="field-cell" data-label="Expiration"><div style="text-align:right"><strong style="color:${exp.cls==="expired"?"#e01931":exp.cls==="exp-soon"?"#e56f00":"var(--navy)"}">${niceDate(item.expDate)}</strong><div style="font-size:12px;color:${exp.cls==="expired"?"#e01931":"var(--muted)"}">${exp.label}</div></div></td><td class="field-cell" data-label="Status"><span class="badge ${item.opened?"open":"closed"}">${item.opened?"Opened":"Unopened"}</span>${openedDateHtml(item)}</td><td class="field-cell added-text" data-label="Added"><span>${addedDateText(item.addedAt)}</span></td><td class="actions-cell-wrap"><div class="actions-cell"><button class="icon-btn" data-mobile-label="Edit" onclick="editItem(${item.id})" title="Edit">✎</button><button class="icon-btn" data-mobile-label="Shop" onclick="moveToShopping(${item.id})" title="Move to shopping">🛒</button><button class="icon-btn danger" data-mobile-label="Delete" onclick="deleteItem(${item.id})" title="Delete">🗑</button></div></td></tr>`; }
+function itemRow(item) { const exp=expInfo(item.expDate); const groupedCount=item.entries?item.entries.length:1; const ids=rowIds(item); const checked=ids.every(id=>selectedIds.has(Number(id)))?"checked":""; return `<tr><td class="select-cell"><input class="bulk-check item-select" type="checkbox" ${checked} data-ids="${ids.join(',')}" onchange="toggleItemSelection(this)" title="Select item"></td><td class="item-cell"><div class="item-main"><div class="thumb">${thumbHtml(item)}</div><div><div class="item-name">${esc(item.name)}</div><div class="item-note">${esc(item.notes||(groupedCount>1?groupedCount+" grouped entries":""))}</div><span class="tag-badge">${esc(mealTagLabel(item.mealTag||inferMealTagFromName(item)))}</span></div></div></td><td class="field-cell" data-label="Category"><span class="badge cat">${esc(item.category)}</span></td><td class="field-cell" data-label="Location"><span class="badge loc">${esc(item.location)}</span></td><td class="field-cell" data-label="Qty"><strong>${item.quantity}</strong></td><td class="field-cell" data-label="Expiration"><div style="text-align:right"><strong style="color:${exp.cls==="expired"?"#e01931":exp.cls==="exp-soon"?"#e56f00":"var(--navy)"}">${niceDate(item.expDate)}</strong><div style="font-size:12px;color:${exp.cls==="expired"?"#e01931":"var(--muted)"}">${exp.label}</div></div></td><td class="field-cell" data-label="Status"><span class="badge ${item.opened?"open":"closed"}">${item.opened?"Opened":"Unopened"}</span>${openedDateHtml(item)}</td><td class="field-cell added-text" data-label="Added"><span>${addedDateText(item.addedAt)}</span></td><td class="actions-cell-wrap"><div class="actions-cell"><button class="icon-btn" data-mobile-label="Edit" onclick="editItem(${item.id})" title="Edit">✎</button><button class="icon-btn" data-mobile-label="Shop" onclick="moveToShopping(${item.id})" title="Move to shopping">🛒</button><button class="icon-btn danger" data-mobile-label="Delete" onclick="deleteItem(${item.id})" title="Delete">🗑</button></div></td></tr>`; }
 function shoppingRow(item) { return `<tr><td class="select-cell"></td><td class="item-cell"><div class="item-main"><div class="thumb">🛒</div><div><div class="item-name">${esc(item.name)}</div><div class="item-note">${esc(item.notes||"")}</div></div></div></td><td class="field-cell" data-label="Category"><span class="badge cat">${esc(item.category||"Other")}</span></td><td class="field-cell" data-label="Location"><span class="badge loc">${esc(item.location||"")}</span></td><td class="field-cell" data-label="Qty"><strong>${item.quantity?esc(item.quantity):""}</strong></td><td class="field-cell" data-label="Expiration"><span>${item.expDate?niceDate(item.expDate):""}</span></td><td class="field-cell" data-label="Status"><span class="badge ${item.completed?"closed":"open"}">${item.completed?"Bought":"Needed"}</span></td><td class="field-cell added-text" data-label="Added"><span>${addedDateText(item.addedAt)}</span></td><td class="actions-cell-wrap"><div class="actions-cell"><button class="icon-btn" data-mobile-label="Bought" onclick="toggleShopping('${item.id}')" title="Mark bought/needed">✓</button><button class="icon-btn danger" data-mobile-label="Delete" onclick="deleteShopping('${item.id}')" title="Delete">🗑</button></div></td></tr>`; }
 function renderSidebar() { const exp=items.filter(i=>i.expDate&&daysUntil(i.expDate)>=0&&daysUntil(i.expDate)<=14).sort((a,b)=>new Date(a.expDate)-new Date(b.expDate)).slice(0,8); expiringList.innerHTML=exp.length?exp.map(i=>`<div class="mini-row"><div class="name">${esc(i.name)}</div><div class="date">${niceDate(i.expDate)}</div><div class="count-pill">${i.quantity}</div></div>`).join(""):`<div style="color:var(--muted)">No items expiring soon.</div>`; const counts=getLocationCounts(), max=Math.max(1,...Object.values(counts)), colors={Fridge:"#4c9cf5",Pantry:"#f39a46",Freezer:"#3479ff",Counter:"#8c7cf0",Household:"#3ca56a",Other:"#8d98a7"}; breakdownList.innerHTML=Object.entries(counts).map(([loc,count])=>`<div class="breakdown-row"><div><strong>${loc==="Fridge"?"❄️":loc==="Freezer"?"❄️":loc==="Pantry"?"🏠":loc==="Household"?"🧻":loc==="Counter"?"📦":"⬡"} ${loc}</strong></div><div class="progress"><span style="width:${Math.round((count/max)*100)}%;background:${colors[loc]}"></span></div><div style="text-align:right">${count} items</div></div>`).join(""); }
 const MEAL_FAV_KEY = "stocksmart_meal_favorites_" + STORAGE_KEY;
@@ -519,55 +612,14 @@ function cleanFoodText(item) { return itemSearchText(item).replace(/[’']/g,"'"
 function hasAny(text, words) { return words.some(w=>text.includes(w)); }
 function hasWord(text, word) { return new RegExp(`(^|\\s)${word.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}(\\s|$)`).test(text); }
 function ingredientTagsForItem(item) {
-  const text = cleanFoodText(item);
-  const tags = new Set();
-  const cat = String(item.category||"").toLowerCase();
+  const primary = item.mealTag || inferMealTagFromName(item);
+  const tags = new Set([primary]);
   const loc = String(item.location||"").toLowerCase();
-
-  // Keep false positives out first.
-  if(hasAny(text,["rice krispies","rice crispy","krispies"])) tags.add("cereal");
-  if(hasAny(text,["magic shell","ice cream topping"])) tags.add("dessert-topping");
-  if(hasAny(text,["chicken noodle soup","cream of chicken soup","soup"])) tags.add("soup");
-
-  // Proteins, but exclude soups/sauces that only mention the protein flavor.
-  if(hasAny(text,["chicken breast","ground chicken","rotisserie chicken","frozen chicken breast","chicken thighs","chicken tenderloin"])) tags.add("protein-chicken-raw");
-  if(hasAny(text,["chicken nuggets","chicken patty","chicken patties","breaded chicken"])) tags.add("protein-chicken-prepared");
-  if(hasAny(text,["ground beef","beef franks","hot dog","hot dogs","meatball","meatballs","pork roll","sausage","bacon","pork chop","turkey"])){ tags.add("protein-meat"); }
-  if(cat==="meat" && !tags.has("soup")) tags.add("protein-meat");
-
-  // Grains and starches with strict names so cereal is not rice and dessert shell is not taco shell.
-  if(hasAny(text,["yellow rice","jasmine rice","long grain rice","white rice","brown rice","spanish rice","goya rice"]) || (hasWord(text,"rice") && !tags.has("cereal") && !tags.has("soup"))) tags.add("grain-rice");
-  if(hasAny(text,["flour tortilla","tortillas","soft tortilla","hard shells","taco shells","wraps"])) tags.add("tortilla");
-  if(hasAny(text,["pasta","ziti","elbow macaroni","fettuccine","angel hair","orzo","egg noodles","ravioli","spaghetti"]) && !hasAny(text,["spaghettios"])) tags.add("pasta");
-  if(hasAny(text,["mac and cheese","macaroni and cheese","mac & cheese"])) tags.add("mac-cheese");
-  if(hasAny(text,["pancake","pancakes","waffle","waffles","french toast"])) tags.add("breakfast-carb");
-
-  // Dairy.
-  if(hasAny(text,["cheddar","mozzarella","parmesan","american cheese","string cheese","babybel","cheese stick","cheese sticks","cream cheese"])) tags.add("cheese");
-  if(hasAny(text,["milk","almond milk","almondmilk","lactaid","whole milk"])) tags.add("milk");
-  if(hasAny(text,["yogurt","yoghurt","stonyfield"])) tags.add("yogurt");
-  if(hasAny(text,["sour cream"])) tags.add("sour-cream");
-  if(hasAny(text,["butter"])) tags.add("butter");
-  if(hasAny(text,["egg","eggs"])) tags.add("eggs");
-
-  // Produce and sides.
-  if(cat==="produce" || hasAny(text,["strawberr","blueberr","blackberr","apple","banana","grape","orange","peach","kiwi","fruit"])) tags.add("fruit");
-  if(hasAny(text,["broccoli","corn","peas","mixed vegetables","vegetable","cauliflower","carrot","lettuce","green beans"])) tags.add("vegetable");
-  if(loc==="freezer" && tags.has("vegetable")) tags.add("frozen-vegetable");
-  if(loc==="freezer" && tags.has("fruit")) tags.add("frozen-fruit");
-
-  // Sauces and pantry helpers.
-  if(hasAny(text,["taco sauce","salsa","taco seasoning","sofrito"])) tags.add("taco-sauce");
-  if(hasAny(text,["tomato sauce","crushed tomatoes","vodka sauce","alfredo","pasta sauce","diced tomatoes"])) tags.add("pasta-sauce");
-  if(hasAny(text,["broth","stock"])) tags.add("broth");
-  if(hasAny(text,["bbq sauce","dipping sauce","ranch","mustard","ketchup","soy sauce","seasoning"])) tags.add("sauce-seasoning");
-  if(hasAny(text,["beans","black beans","pinto beans"])) tags.add("beans");
-  if(hasAny(text,["cracker","goldfish","pretzel","chips","cookie","cookies","muffin","bar","granola"])) tags.add("snack");
-
-  // Freezer mains.
-  if(loc==="freezer" && hasAny(text,["pizza","ravioli","meatball","pupusa","mozzarella stick","mac cheese bites","nugget","patty","french toast","pancake","waffle"])) tags.add("freezer-main");
-
-  return [...tags];
+  if(primary==="vegetable" && loc==="freezer") tags.add("frozen-vegetable");
+  if(primary==="fruit" && loc==="freezer") tags.add("frozen-fruit");
+  if(["protein-chicken-prepared","freezer-main","breakfast-carb","mac-cheese"].includes(primary) && loc==="freezer") tags.add("freezer-main");
+  if(primary==="dessert") tags.add("dessert-topping");
+  return [...tags].filter(t=>t && !["household","not-for-meals","review-needed","cereal","snack","drink","dessert"].includes(t) ? true : ["cereal","snack","drink","dessert","household","review-needed","not-for-meals"].includes(t));
 }
 function itemHasTag(item, tag) { return ingredientTagsForItem(item).includes(tag); }
 function matchingInventoryItems(tagGroup, limit=5) {
@@ -671,10 +723,10 @@ function setDateValue(input, value) {
   input.value = value || "";
   if (typeof input.syncDateSelects === "function") input.syncDateSelects();
 }
-function clearForm() { editingId=null; itemModalTitle.textContent="Add Item"; formName.value=""; formCategory.value="Other"; formLocation.value="Pantry"; formQty.value=1; setDateValue(formExp,""); setDateValue(formOpenedDate,""); formImage.value=""; formNotes.value=""; formOpened.checked=false; syncOpenedDateField(); }
+function clearForm() { editingId=null; itemModalTitle.textContent="Add Item"; formName.value=""; formCategory.value="Other"; formMealTag.value="review-needed"; formLocation.value="Pantry"; formQty.value=1; setDateValue(formExp,""); setDateValue(formOpenedDate,""); formImage.value=""; formNotes.value=""; formOpened.checked=false; syncOpenedDateField(); }
 function openAdd() { clearForm(); openModal("itemModal"); }
-function editItem(id) { const item=items.find(i=>i.id===id); if(!item)return; editingId=id; itemModalTitle.textContent="Edit Item"; formName.value=item.name; formCategory.value=item.category; formLocation.value=item.location; formQty.value=item.quantity; setDateValue(formExp,item.expDate); setDateValue(formOpenedDate,item.openedDate||""); formImage.value=item.imageUrl||""; formNotes.value=item.notes; formOpened.checked=item.opened; syncOpenedDateField(); openModal("itemModal"); }
-function saveItem() { const data={name:formName.value.trim(),category:formCategory.value,location:formLocation.value,quantity:Number(formQty.value||0),expDate:formExp.value,openedDate:formOpened.checked?formOpenedDate.value:"",imageUrl:formImage.value.trim(),notes:formNotes.value.trim(),opened:formOpened.checked}; if(!data.name) return alert("Please enter an item name."); if(editingId) items=items.map(i=>i.id===editingId?{...i,...data}:i); else items.push({...data,id:nextId++,addedAt:new Date().toISOString()}); closeModal("itemModal"); render(); if(pendingContinuousScan){ pendingContinuousScan=false; setTimeout(()=>openScanner("add"),250); } }
+function editItem(id) { const item=items.find(i=>i.id===id); if(!item)return; editingId=id; itemModalTitle.textContent="Edit Item"; formName.value=item.name; formCategory.value=item.category; formMealTag.value=item.mealTag||inferMealTagFromName(item); formLocation.value=item.location; formQty.value=item.quantity; setDateValue(formExp,item.expDate); setDateValue(formOpenedDate,item.openedDate||""); formImage.value=item.imageUrl||""; formNotes.value=item.notes; formOpened.checked=item.opened; syncOpenedDateField(); openModal("itemModal"); }
+function saveItem() { const data={name:formName.value.trim(),category:formCategory.value,mealTag:formMealTag.value,location:formLocation.value,quantity:Number(formQty.value||0),expDate:formExp.value,openedDate:formOpened.checked?formOpenedDate.value:"",imageUrl:formImage.value.trim(),notes:formNotes.value.trim(),opened:formOpened.checked}; if(!data.name) return alert("Please enter an item name."); if(editingId) items=items.map(i=>i.id===editingId?{...i,...data}:i); else items.push({...data,id:nextId++,addedAt:new Date().toISOString()}); closeModal("itemModal"); render(); if(pendingContinuousScan){ pendingContinuousScan=false; setTimeout(()=>openScanner("add"),250); } }
 function deleteItem(id) { if(!confirm("Delete this item?"))return; items=items.filter(i=>i.id!==id); render(); }
 function moveToShopping(id) { const item=items.find(i=>i.id===id); if(!item)return; if(!confirm("Move this item to the shopping list and remove it from inventory?"))return; shoppingList.unshift({id:"s"+Date.now()+"-"+id,name:item.name,category:item.category,location:item.location,expDate:item.expDate,notes:item.notes,addedAt:new Date().toISOString(),completed:false}); items=items.filter(i=>i.id!==id); showShopping(); }
 function toggleShopping(id) { shoppingList=shoppingList.map(i=>String(i.id)===String(id)?{...i,completed:!i.completed}:i); render(); } function deleteShopping(id) { shoppingList=shoppingList.filter(i=>String(i.id)!==String(id)); render(); }
@@ -733,6 +785,7 @@ function inferFromExistingBarcode(barcode) {
   return {
     category: mostCommonValue(exact.map(i=>i.category)) || "Other",
     location: mostCommonValue(exact.map(i=>i.location)) || "Pantry",
+    mealTag: mostCommonValue(exact.map(i=>i.mealTag||inferMealTagFromName(i))) || "review-needed",
     matchedItems: exact.length
   };
 }
@@ -762,20 +815,21 @@ async function lookupBarcode(barcode) {
       const name=[p.brands,p.product_name||p.product_name_en].filter(Boolean).join(" ") || "Scanned Item";
       const category=learned?.category || inferCategoryFromProduct(p,name);
       const location=learned?.location || inferLocationFromProduct(p,name,category);
-      return {found:true,name,category,location,notes:"UPC: "+barcode,imageUrl:p.image_front_url||p.image_url||"",learnedFromInventory:!!learned};
+      const mealTag = learned?.mealTag || inferMealTagFromName({name,category,location,notes:"UPC: "+barcode}, p);
+      return {found:true,name,category,location,mealTag,notes:"UPC: "+barcode,imageUrl:p.image_front_url||p.image_url||"",learnedFromInventory:!!learned};
     }
   }catch{}
-  return {found:false,category:learned?.category||"Other",location:learned?.location||"Pantry",notes:"UPC: "+barcode,imageUrl:"",learnedFromInventory:!!learned};
+  return {found:false,category:learned?.category||"Other",location:learned?.location||"Pantry",mealTag:learned?.mealTag||"review-needed",notes:"UPC: "+barcode,imageUrl:"",learnedFromInventory:!!learned};
 }
 function setBarcodeMode(mode="add") { const select=document.getElementById("barcodeMode"); if(select) select.value=mode; document.querySelectorAll(".scan-mode-btn").forEach(btn=>btn.classList.toggle("active",btn.dataset.barcodeMode===mode)); }
-async function handleBarcode(barcode) { const mode=(document.getElementById("barcodeMode")?.value||"add"); pendingContinuousScan = mode==="add" && !!document.getElementById("continuousScanToggle")?.checked; closeScanner(); const result=await lookupBarcode(barcode); if(mode==="check"){ pendingContinuousScan=false; const matches=findInventoryMatches(barcode,result?.name||""); showInventoryCheckResult(barcode,result,matches); return; } clearForm(); if(result.found){formName.value=result.name; formImage.value=result.imageUrl||"";} formCategory.value=result.category||"Other"; formLocation.value=result.location||inferLocationFromCategory(result.category||"Other"); formNotes.value=result.notes; openModal("itemModal"); }
+async function handleBarcode(barcode) { const mode=(document.getElementById("barcodeMode")?.value||"add"); pendingContinuousScan = mode==="add" && !!document.getElementById("continuousScanToggle")?.checked; closeScanner(); const result=await lookupBarcode(barcode); if(mode==="check"){ pendingContinuousScan=false; const matches=findInventoryMatches(barcode,result?.name||""); showInventoryCheckResult(barcode,result,matches); return; } clearForm(); if(result.found){formName.value=result.name; formImage.value=result.imageUrl||"";} formCategory.value=result.category||"Other"; formMealTag.value=result.mealTag||inferMealTagFromName({name:formName.value,category:formCategory.value,location:result.location||"",notes:result.notes||""}); formLocation.value=result.location||inferLocationFromCategory(result.category||"Other"); formNotes.value=result.notes; openModal("itemModal"); }
 async function openScanner(mode="add") { openModal("scannerModal"); scannerError.textContent=""; manualBarcode.value=""; setBarcodeMode(mode); try{ if(!window.ZXing||!navigator.mediaDevices)throw new Error(); codeReader=new ZXing.BrowserMultiFormatReader(); let deviceId=null; try{const devices=await codeReader.listVideoInputDevices(); const back=devices.find(d=>/back|rear|environment/i.test(d.label||""))||devices[devices.length-1]; deviceId=back?back.deviceId:null;}catch{} await codeReader.decodeFromVideoDevice(deviceId,scannerVideo,result=>{if(result)handleBarcode(result.getText());}); }catch{ scannerError.textContent="Camera scanning could not start. Type or paste the barcode instead."; } }
 function closeScanner() { try{if(codeReader)codeReader.reset();}catch{} closeModal("scannerModal"); }
 function openAppMenu() { openModal("menuModal"); }
 function closeAppMenu() { closeModal("menuModal"); }
 function runFromMenu(fn) { closeAppMenu(); setTimeout(fn, 50); }
 
-function init() { buildDatePickers(); CATEGORIES.forEach(c=>categoryFilter.insertAdjacentHTML("beforeend",`<option value="${c}">${c==="All"?"All Categories":c}</option>`)); CATEGORIES.filter(c=>c!=="All").forEach(c=>{formCategory.insertAdjacentHTML("beforeend",`<option>${c}</option>`); shopCategory.insertAdjacentHTML("beforeend",`<option>${c}</option>`);}); LOCATIONS.forEach(l=>{formLocation.insertAdjacentHTML("beforeend",`<option>${l}</option>`); shopLocation.insertAdjacentHTML("beforeend",`<option>${l}</option>`);}); addBtn.onclick=openAdd; scanBtn.onclick=()=>openScanner("add"); menuBtn.onclick=openAppMenu; closeMenuModal.onclick=closeAppMenu; document.querySelectorAll(".scan-mode-btn").forEach(btn=>btn.onclick=()=>setBarcodeMode(btn.dataset.barcodeMode)); scanMenuBtn.onclick=()=>runFromMenu(()=>openScanner("add")); addMenuBtn.onclick=()=>runFromMenu(openAdd); shoppingMenuBtn.onclick=()=>runFromMenu(showShopping); backupBtn.onclick=()=>{closeAppMenu(); backup();}; restoreInput.onchange=e=>{restoreFile(e.target.files[0]); closeAppMenu();}; recoverBtn.onclick=()=>{closeAppMenu(); recover();}; totalCard.onclick=()=>{state.metricFilter=null;state.activeLocation="All";state.grouped=false;showInventory();}; groupedCard.onclick=()=>{state.grouped=true;showInventory();}; expiringCard.onclick=()=>showInventory("expiring"); expiredCard.onclick=()=>showInventory("expired"); shoppingCard.onclick=showShopping; addShoppingBtn.onclick=openShoppingAdd; document.querySelectorAll(".loc-btn").forEach(btn=>btn.onclick=()=>{state.activeLocation=btn.dataset.location;state.metricFilter=null;state.mode="inventory";state.limit=10;render();}); searchInput.oninput=e=>{state.search=e.target.value;state.limit=10;render();}; categoryFilter.onchange=e=>{state.activeCategory=e.target.value;state.limit=10;render();}; sortSelect.onchange=e=>{state.sort=e.target.value;render();}; toggleGroupedBtn.onclick=()=>{state.grouped=!state.grouped;clearSelection();render();}; loadMoreBtn.onclick=()=>{state.limit+=25;render();}; selectAllVisible.onchange=e=>toggleSelectAllVisible(e.target); selectVisibleBtn.onclick=selectVisibleItems; clearSelectionBtn.onclick=clearSelection; deleteSelectedBtn.onclick=deleteSelectedItems; viewExpiringBtn.onclick=()=>showInventory("expiring"); viewAllLocationsBtn.onclick=()=>{state.activeLocation="All";showInventory();}; useFirstBtn.onclick=useFirst; cookInventoryBtn.onclick=cookFromInventory; mealIdeasBtn.onclick=()=>mealIdeas(true); useSoonMealsBtn.onclick=useSoonMeals; favoriteMealsBtn.onclick=favoriteMeals; refreshMealIdeasInline.onclick=()=>mealIdeas(false); dealsSmartBtn.onclick=weeklyCirculars; dealsMenuBtn.onclick=()=>runFromMenu(weeklyCirculars); familySyncBtn.onclick=familySync; familySyncMenuBtn.onclick=()=>runFromMenu(familySync); installHelpBtn.onclick=installHelp; installHelpMenuBtn.onclick=()=>runFromMenu(installHelp); refreshSmartBtn.onclick=renderSidebar; closeItemModal.onclick=()=>closeModal("itemModal"); cancelItemBtn.onclick=()=>closeModal("itemModal"); saveItemBtn.onclick=saveItem; formOpened.onchange=syncOpenedDateField; closeShoppingModal.onclick=()=>closeModal("shoppingModal"); cancelShoppingBtn.onclick=()=>closeModal("shoppingModal"); saveShoppingBtn.onclick=saveShoppingItem; closeSmartModal.onclick=()=>closeModal("smartModal"); closeScannerBtn.onclick=closeScanner; manualBarcodeBtn.onclick=()=>{const code=manualBarcode.value.replace(/\D/g,""); if(!code)return alert("Enter a barcode number."); handleBarcode(code);}; if("serviceWorker" in navigator) window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js").catch(()=>{})); render(); }
+function init() { buildDatePickers(); migrateMealTags(); MEAL_TAGS.forEach(([value,label])=>{ mealTagFilter.insertAdjacentHTML("beforeend",`<option value="${value}">${label}</option>`); if(value!=="All") formMealTag.insertAdjacentHTML("beforeend",`<option value="${value}">${label}</option>`); }); CATEGORIES.forEach(c=>categoryFilter.insertAdjacentHTML("beforeend",`<option value="${c}">${c==="All"?"All Categories":c}</option>`)); CATEGORIES.filter(c=>c!=="All").forEach(c=>{formCategory.insertAdjacentHTML("beforeend",`<option>${c}</option>`); shopCategory.insertAdjacentHTML("beforeend",`<option>${c}</option>`);}); LOCATIONS.forEach(l=>{formLocation.insertAdjacentHTML("beforeend",`<option>${l}</option>`); shopLocation.insertAdjacentHTML("beforeend",`<option>${l}</option>`);}); addBtn.onclick=openAdd; scanBtn.onclick=()=>openScanner("add"); menuBtn.onclick=openAppMenu; closeMenuModal.onclick=closeAppMenu; document.querySelectorAll(".scan-mode-btn").forEach(btn=>btn.onclick=()=>setBarcodeMode(btn.dataset.barcodeMode)); scanMenuBtn.onclick=()=>runFromMenu(()=>openScanner("add")); addMenuBtn.onclick=()=>runFromMenu(openAdd); shoppingMenuBtn.onclick=()=>runFromMenu(showShopping); backupBtn.onclick=()=>{closeAppMenu(); backup();}; restoreInput.onchange=e=>{restoreFile(e.target.files[0]); closeAppMenu();}; recoverBtn.onclick=()=>{closeAppMenu(); recover();}; totalCard.onclick=()=>{state.metricFilter=null;state.activeLocation="All";state.grouped=false;showInventory();}; groupedCard.onclick=()=>{state.grouped=true;showInventory();}; expiringCard.onclick=()=>showInventory("expiring"); expiredCard.onclick=()=>showInventory("expired"); shoppingCard.onclick=showShopping; addShoppingBtn.onclick=openShoppingAdd; document.querySelectorAll(".loc-btn").forEach(btn=>btn.onclick=()=>{state.activeLocation=btn.dataset.location;state.metricFilter=null;state.mode="inventory";state.limit=10;render();}); searchInput.oninput=e=>{state.search=e.target.value;state.limit=10;render();}; categoryFilter.onchange=e=>{state.activeCategory=e.target.value;state.limit=10;render();}; mealTagFilter.onchange=e=>{state.activeMealTag=e.target.value;state.limit=10;render();}; sortSelect.onchange=e=>{state.sort=e.target.value;render();}; toggleGroupedBtn.onclick=()=>{state.grouped=!state.grouped;clearSelection();render();}; loadMoreBtn.onclick=()=>{state.limit+=25;render();}; selectAllVisible.onchange=e=>toggleSelectAllVisible(e.target); selectVisibleBtn.onclick=selectVisibleItems; clearSelectionBtn.onclick=clearSelection; deleteSelectedBtn.onclick=deleteSelectedItems; viewExpiringBtn.onclick=()=>showInventory("expiring"); viewAllLocationsBtn.onclick=()=>{state.activeLocation="All";showInventory();}; useFirstBtn.onclick=useFirst; cookInventoryBtn.onclick=cookFromInventory; mealIdeasBtn.onclick=()=>mealIdeas(true); useSoonMealsBtn.onclick=useSoonMeals; favoriteMealsBtn.onclick=favoriteMeals; refreshMealIdeasInline.onclick=()=>mealIdeas(false); dealsSmartBtn.onclick=weeklyCirculars; dealsMenuBtn.onclick=()=>runFromMenu(weeklyCirculars); familySyncBtn.onclick=familySync; familySyncMenuBtn.onclick=()=>runFromMenu(familySync); installHelpBtn.onclick=installHelp; installHelpMenuBtn.onclick=()=>runFromMenu(installHelp); refreshSmartBtn.onclick=renderSidebar; closeItemModal.onclick=()=>closeModal("itemModal"); cancelItemBtn.onclick=()=>closeModal("itemModal"); saveItemBtn.onclick=saveItem; formOpened.onchange=syncOpenedDateField; formName.onblur=()=>{ if(!editingId || formMealTag.value==="review-needed") formMealTag.value=inferMealTagFromName({name:formName.value,category:formCategory.value,location:formLocation.value,notes:formNotes.value}); }; formCategory.onchange=()=>{ if(formMealTag.value==="review-needed") formMealTag.value=inferMealTagFromName({name:formName.value,category:formCategory.value,location:formLocation.value,notes:formNotes.value}); }; closeShoppingModal.onclick=()=>closeModal("shoppingModal"); cancelShoppingBtn.onclick=()=>closeModal("shoppingModal"); saveShoppingBtn.onclick=saveShoppingItem; closeSmartModal.onclick=()=>closeModal("smartModal"); closeScannerBtn.onclick=closeScanner; manualBarcodeBtn.onclick=()=>{const code=manualBarcode.value.replace(/\D/g,""); if(!code)return alert("Enter a barcode number."); handleBarcode(code);}; if("serviceWorker" in navigator) window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js").catch(()=>{})); render(); }
 init();
 </script>
 </body>
