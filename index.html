@@ -282,7 +282,7 @@ input:focus, select:focus { box-shadow:0 0 0 3px rgba(60,198,183,.2); border-col
 @media(max-width:760px){.v6-grid{grid-template-columns:1fr}}
 
 /* v7 simple add screen: hide advanced fields unless expanded */
-#itemModal.simple .advanced-field{display:none}
+#itemModal.simple .advanced-field{display:none !important}
 #itemModal.simple #ss7SimpleHint{display:block}
 #ss7SimpleHint{display:none}
 </style>
@@ -400,7 +400,7 @@ input:focus, select:focus { box-shadow:0 0 0 3px rgba(60,198,183,.2); border-col
   </div>
 </div></div></div>
 
-<div class="modal" id="itemModal"><div class="modal-box"><div class="modal-head"><h3 id="itemModalTitle">Add Item</h3><button class="secondary" id="closeItemModal">Close</button></div><div class="modal-body">
+<div class="modal simple" id="itemModal"><div class="modal-box"><div class="modal-head"><h3 id="itemModalTitle">Add Item</h3><button class="secondary" id="closeItemModal">Close</button></div><div class="modal-body">
   <div class="v6-row" style="margin-bottom:10px"><button id="ss7ToggleAdvanced" class="secondary" type="button">More details</button><span id="ss7SimpleHint" style="color:var(--muted);font-size:13px">Just name, quantity, and expiration. Category and location are filled in automatically.</span></div>
   <div class="form-grid">
     <label class="full">Item name<input id="formName"></label>
@@ -1403,6 +1403,13 @@ formName.onblur = function(e){
 };
 var ss7OrigOpenAdd2 = openAdd;
 openAdd = function(){ ss7OrigOpenAdd2(); ss7SetAdvanced(false); };
+/* Fix for the reported bug: init() and the v6 script bound the Add Item
+   buttons to earlier versions of openAdd, so tapping the top Add Item
+   button or the menu Add Item button bypassed ss7SetAdvanced(false)
+   entirely and opened the form expanded, with a misleading
+   "More details" label. Rebind them to the current wrapper. */
+var ss7AddBtn = document.getElementById("addBtn"); if (ss7AddBtn) ss7AddBtn.onclick = openAdd;
+var ss7AddMenuBtn = document.getElementById("addMenuBtn"); if (ss7AddMenuBtn) ss7AddMenuBtn.onclick = function(){ runFromMenu(openAdd); };
 var ss7OrigEditItem2 = editItem;
 editItem = function(id){ ss7OrigEditItem2(id); ss7SetAdvanced(true); };
 if (typeof startScannedAdd === "function") {
