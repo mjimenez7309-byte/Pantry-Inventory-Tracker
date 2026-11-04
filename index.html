@@ -1388,9 +1388,12 @@ function ss7AutoFillFromName(){
     return;
   }
   try {
-    if (typeof inferLocationFromCategory === "function" && formCategory && formLocation) {
-      formLocation.value = inferLocationFromCategory(formCategory.value || "Other");
-    }
+    var guessedCat = (typeof inferCategoryFromProduct === "function") ? inferCategoryFromProduct(null, nameEl.value) : "Other";
+    if (guessedCat && guessedCat !== "Other" && formCategory) formCategory.value = guessedCat;
+    var guessedLoc = null;
+    try { if (typeof ss6Corrections !== "undefined" && ss6Corrections) guessedLoc = ss6Corrections["name:" + target]; } catch(e2) {}
+    if (!guessedLoc && typeof inferLocationFromProduct === "function") guessedLoc = inferLocationFromProduct(null, nameEl.value, formCategory ? formCategory.value : guessedCat);
+    if (guessedLoc && formLocation) formLocation.value = guessedLoc;
   } catch(e) {}
 }
 var ss7OrigNameBlur = formName.onblur;
