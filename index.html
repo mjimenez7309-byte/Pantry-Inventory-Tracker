@@ -280,6 +280,11 @@ input:focus, select:focus { box-shadow:0 0 0 3px rgba(60,198,183,.2); border-col
 .v6-input{width:100%;padding:10px;border:1px solid var(--line);border-radius:10px}
 .v6-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 @media(max-width:760px){.v6-grid{grid-template-columns:1fr}}
+
+/* v7 simple add screen: hide advanced fields unless expanded */
+#itemModal.simple .advanced-field{display:none}
+#itemModal.simple #ss7SimpleHint{display:block}
+#ss7SimpleHint{display:none}
 </style>
 </head>
 <body>
@@ -396,20 +401,21 @@ input:focus, select:focus { box-shadow:0 0 0 3px rgba(60,198,183,.2); border-col
 </div></div></div>
 
 <div class="modal" id="itemModal"><div class="modal-box"><div class="modal-head"><h3 id="itemModalTitle">Add Item</h3><button class="secondary" id="closeItemModal">Close</button></div><div class="modal-body">
+  <div class="v6-row" style="margin-bottom:10px"><button id="ss7ToggleAdvanced" class="secondary" type="button">More details</button><span id="ss7SimpleHint" style="color:var(--muted);font-size:13px">Just name, quantity, and expiration. Category and location are filled in automatically.</span></div>
   <div class="form-grid">
     <label class="full">Item name<input id="formName"></label>
-    <label>Category<select id="formCategory"></select></label>
-    <label>Meal tag<select id="formMealTag"></select></label>
-    <label>Location<select id="formLocation"></select></label>
+    <label class="advanced-field">Category<select id="formCategory"></select></label>
+    <label class="advanced-field">Meal tag<select id="formMealTag"></select></label>
+    <label class="advanced-field">Location<select id="formLocation"></select></label>
     <label>Quantity<input id="formQty" type="number" min="0"></label>
-    <label>Unit<select id="formUnit"><option>Each</option><option>Package</option><option>Box</option><option>Bottle</option><option>Can</option><option>Bag</option><option>Pound</option><option>Ounce</option></select></label>
-    <label>Barcode, optional<input id="formBarcode" inputmode="numeric" placeholder="UPC, if known"></label>
-    <label>Use within, days after opening, optional<input id="formAfterDays" type="number" min="0" placeholder="e.g. 7"></label>
+    <label class="advanced-field">Unit<select id="formUnit"><option>Each</option><option>Package</option><option>Box</option><option>Bottle</option><option>Can</option><option>Bag</option><option>Pound</option><option>Ounce</option></select></label>
+    <label class="advanced-field">Barcode, optional<input id="formBarcode" inputmode="numeric" placeholder="UPC, if known"></label>
+    <label class="advanced-field">Use within, days after opening, optional<input id="formAfterDays" type="number" min="0" placeholder="e.g. 7"></label>
     <label>Expiration date<input id="formExp" type="hidden"><div class="date-parts" data-date-for="formExp"></div></label>
-    <label>Date opened, optional<input id="formOpenedDate" type="hidden"><div class="date-parts" data-date-for="formOpenedDate"></div></label>
-    <label>Image URL, optional<input id="formImage" placeholder="https://..."></label>
-    <label class="full">Notes<input id="formNotes"></label>
-    <label class="full" style="display:flex;align-items:center;gap:10px"><input id="formOpened" type="checkbox" style="width:18px;height:18px"> Opened</label>
+    <label class="advanced-field">Date opened, optional<input id="formOpenedDate" type="hidden"><div class="date-parts" data-date-for="formOpenedDate"></div></label>
+    <label class="advanced-field">Image URL, optional<input id="formImage" placeholder="https://..."></label>
+    <label class="full advanced-field">Notes<input id="formNotes"></label>
+    <label class="full advanced-field" style="display:flex;align-items:center;gap:10px"><input id="formOpened" type="checkbox" style="width:18px;height:18px"> Opened</label>
   </div><div class="modal-actions"><button class="secondary" id="cancelItemBtn">Cancel</button><button class="primary" id="saveItemBtn">Save Item</button></div>
 </div></div></div>
 
@@ -1345,6 +1351,70 @@ var saveBtn = document.getElementById("saveItemBtn"); if (saveBtn) saveBtn.oncli
 var addBtnEl = document.getElementById("addBtn"); if (addBtnEl) addBtnEl.onclick = openAdd;
 var addMenuEl = document.getElementById("addMenuBtn"); if (addMenuEl) addMenuEl.onclick = function(){ runFromMenu(openAdd); };
 render();
+</script>
+
+<script>
+/* StockSmart v7 simple add screen, 2026-11-03.
+   New items show only name, quantity, and expiration. Everything else
+   stays in the form, with its existing defaults, under More details.
+   Editing an existing item shows all fields, so no detail is hidden
+   when you are changing something you already saved. */
+function ss7SetAdvanced(show){
+  var modal = document.getElementById("itemModal");
+  if (!modal) return;
+  if (show) modal.classList.remove("simple"); else modal.classList.add("simple");
+  var btn = document.getElementById("ss7ToggleAdvanced");
+  if (btn) btn.textContent = show ? "Fewer details" : "More details";
+}
+function ss7ToggleAdvanced(){
+  var modal = document.getElementById("itemModal");
+  ss7SetAdvanced(modal ? modal.classList.contains("simple") : true);
+}
+var ss7ToggleBtn = document.getElementById("ss7ToggleAdvanced");
+if (ss7ToggleBtn) ss7ToggleBtn.onclick = ss7ToggleAdvanced;
+/* Auto-fill category, location, and unit from a matching existing item,
+   so the simple screen does not force a choice you have made before. */
+function ss7AutoFillFromName(){
+  if (editingId) return;
+  var nameEl = document.getElementById("formName");
+  if (!nameEl || !nameEl.value.trim()) return;
+  var norm = function(s){ return String(s || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim(); };
+  var target = norm(nameEl.value);
+  var match = items.find(function(i){ return norm(i.name) === target; }) || items.find(function(i){ return norm(i.name).indexOf(target) !== -1 && target.length >= 4; });
+  if (match) {
+    if (formCategory) formCategory.value = match.category || "Other";
+    if (formLocation) formLocation.value = match.location || "Pantry";
+    var u = document.getElementById("formUnit"); if (u && match.unit) u.value = match.unit;
+    return;
+  }
+  try {
+    var guessedCat = (typeof inferCategoryFromProduct === "function") ? inferCategoryFromProduct(null, nameEl.value) : "Other";
+    if (guessedCat && guessedCat !== "Other" && formCategory) formCategory.value = guessedCat;
+    var guessedLoc = null;
+    try { if (typeof ss6Corrections !== "undefined" && ss6Corrections) guessedLoc = ss6Corrections["name:" + target]; } catch(e2) {}
+    if (!guessedLoc && typeof inferLocationFromProduct === "function") guessedLoc = inferLocationFromProduct(null, nameEl.value, formCategory ? formCategory.value : guessedCat);
+    if (guessedLoc && formLocation) formLocation.value = guessedLoc;
+  } catch(e) {}
+}
+var ss7OrigNameBlur = formName.onblur;
+formName.onblur = function(e){
+  if (ss7OrigNameBlur) ss7OrigNameBlur(e);
+  ss7AutoFillFromName();
+};
+var ss7OrigOpenAdd2 = openAdd;
+openAdd = function(){ ss7OrigOpenAdd2(); ss7SetAdvanced(false); };
+var ss7OrigEditItem2 = editItem;
+editItem = function(id){ ss7OrigEditItem2(id); ss7SetAdvanced(true); };
+if (typeof startScannedAdd === "function") {
+  var ss7OrigStartScanned2 = startScannedAdd;
+  startScannedAdd = function(barcode){ ss7OrigStartScanned2(barcode); ss7SetAdvanced(false); };
+}
+var ss7OrigHandleBarcode2 = handleBarcode;
+handleBarcode = async function(barcode){
+  await ss7OrigHandleBarcode2(barcode);
+  var modal = document.getElementById("itemModal");
+  if (modal && modal.classList.contains("show")) ss7SetAdvanced(false);
+};
 </script>
 
 </body>
