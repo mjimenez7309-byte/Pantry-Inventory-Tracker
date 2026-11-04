@@ -269,10 +269,21 @@ input:focus, select:focus { box-shadow:0 0 0 3px rgba(60,198,183,.2); border-col
 .meal-muted { color:var(--muted); font-size:13px; line-height:1.35; }
 @media(max-width:760px) { .meal-card { padding:11px; border-radius:14px; } .meal-actions { display:grid; grid-template-columns:1fr; } .meal-actions button { width:100%; } }
 
+
+/* StockSmart v6 upgrade: compact qty controls, update banner, v6 panels */
+.qty-btn{width:30px;height:30px;border:1px solid var(--line);background:#fff;border-radius:9px;font-weight:900;font-size:16px;line-height:1;padding:0}
+.qty-wrap{display:inline-flex;align-items:center;gap:6px}
+#ss6UpdateBanner{display:none;gap:10px;align-items:center;justify-content:space-between;background:#fff4dc;border:1px solid #ffd797;border-radius:12px;padding:10px 12px;margin-bottom:12px;font-weight:700}
+#ss6UpdateBanner.show{display:flex}
+.v6-card{border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:10px;background:#fff}
+.v6-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.v6-input{width:100%;padding:10px;border:1px solid var(--line);border-radius:10px}
+.v6-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+@media(max-width:760px){.v6-grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
-<div class="app-shell">
+<div class="app-shell"><div id="ss6UpdateBanner"><span>New StockSmart version available.</span><button class="primary" type="button" onclick="ss6ApplyUpdate()">Refresh to update</button></div>
   <header class="topbar">
     <div class="brand">
       <img src="icon.png" alt="StockSmart icon">
@@ -373,6 +384,11 @@ input:focus, select:focus { box-shadow:0 0 0 3px rgba(60,198,183,.2); border-col
     <button class="menu-tile" id="backupBtn" type="button"><span class="ico">⬇️</span><span><strong>Backup</strong><small>Save a JSON copy</small></span></button>
     <label class="menu-tile" for="restoreInput"><span class="ico">⬆️</span><span><strong>Restore</strong><small>Load a backup file</small></span><input class="hidden-input" id="restoreInput" type="file" accept=".json,application/json"></label>
     <button class="menu-tile" id="recoverBtn" type="button"><span class="ico">♻️</span><span><strong>Recover</strong><small>Reload built-in backup</small></span></button>
+    <button class="menu-tile" id="ss6HistoryBtn" type="button"><span class="ico">🕘</span><span><strong>Addition History</strong><small>What was added on a day</small></span></button>
+    <button class="menu-tile" id="ss6SessionBtn" type="button"><span class="ico">🛒</span><span><strong>Shopping Session</strong><small>Start, review, finish a trip</small></span></button>
+    <button class="menu-tile" id="ss6RecipesBtn" type="button"><span class="ico">📖</span><span><strong>Recipes</strong><small>Add, edit, favorite recipes</small></span></button>
+    <button class="menu-tile" id="ss6PlannerBtn" type="button"><span class="ico">📅</span><span><strong>Meal Planner</strong><small>Seven-day plan</small></span></button>
+    <button class="menu-tile" id="ss6SettingsBtn" type="button"><span class="ico">⚙️</span><span><strong>Settings</strong><small>Expiring soon, batches, trash</small></span></button>
     <button class="menu-tile" id="dealsMenuBtn" type="button"><span class="ico">📰</span><span><strong>Deals</strong><small>Weekly circulars</small></span></button>
     <button class="menu-tile" id="familySyncMenuBtn" type="button"><span class="ico">👥</span><span><strong>Family Sync</strong><small>Manual backup/restore</small></span></button>
     <button class="menu-tile" id="installHelpMenuBtn" type="button"><span class="ico">📱</span><span><strong>Install Help</strong><small>Phone or desktop app</small></span></button>
@@ -386,6 +402,9 @@ input:focus, select:focus { box-shadow:0 0 0 3px rgba(60,198,183,.2); border-col
     <label>Meal tag<select id="formMealTag"></select></label>
     <label>Location<select id="formLocation"></select></label>
     <label>Quantity<input id="formQty" type="number" min="0"></label>
+    <label>Unit<select id="formUnit"><option>Each</option><option>Package</option><option>Box</option><option>Bottle</option><option>Can</option><option>Bag</option><option>Pound</option><option>Ounce</option></select></label>
+    <label>Barcode, optional<input id="formBarcode" inputmode="numeric" placeholder="UPC, if known"></label>
+    <label>Use within, days after opening, optional<input id="formAfterDays" type="number" min="0" placeholder="e.g. 7"></label>
     <label>Expiration date<input id="formExp" type="hidden"><div class="date-parts" data-date-for="formExp"></div></label>
     <label>Date opened, optional<input id="formOpenedDate" type="hidden"><div class="date-parts" data-date-for="formOpenedDate"></div></label>
     <label>Image URL, optional<input id="formImage" placeholder="https://..."></label>
@@ -463,7 +482,7 @@ let pendingContinuousScan = false;
 
 function loadItems() { try { const saved=JSON.parse(localStorage.getItem(STORAGE_KEY)||"null"); if(Array.isArray(saved)&&saved.length) return normalizeItems(saved); } catch{} return normalizeItems(DEFAULT_ITEMS); }
 function loadShopping() { try { const saved=JSON.parse(localStorage.getItem(SHOPPING_KEY)||"null"); if(Array.isArray(saved)) return saved; } catch{} return DEFAULT_SHOPPING || []; }
-function normalizeItems(list) { return (list||[]).map(item=>{ const base={id:item.id,name:item.name||"",category:item.category||"Other",location:item.location||"Pantry",quantity:Number(item.quantity||0),expDate:item.expDate||"",opened:!!item.opened,openedDate:item.openedDate||item.openDate||item.dateOpened||"",notes:item.notes||"",addedAt:item.addedAt||item.dateAdded||"Starter list",imageUrl:item.imageUrl||item.image||"",barcode:item.barcode||item.upc||""}; base.mealTag = item.mealTag || item.ingredientTag || inferMealTagFromName(base); return base; }); }
+function normalizeItems(list) { return (list||[]).map(item=>{ const base={id:item.id,name:item.name||"",category:item.category||"Other",location:item.location||"Pantry",quantity:Number(item.quantity||0),expDate:item.expDate||"",opened:!!item.opened,openedDate:item.openedDate||item.openDate||item.dateOpened||"",notes:item.notes||"",addedAt:item.addedAt||item.dateAdded||"Starter list",imageUrl:item.imageUrl||item.image||"",barcode:item.barcode||item.upc||"",unit:item.unit||"Each",afterOpeningDays:item.afterOpeningDays||item.afterDays||""}; base.mealTag = item.mealTag || item.ingredientTag || inferMealTagFromName(base); return base; }); }
 function saveAll() { localStorage.setItem(STORAGE_KEY,JSON.stringify(items)); localStorage.setItem(SHOPPING_KEY,JSON.stringify(shoppingList)); localStorage.setItem(NEXT_ID_KEY,String(nextId)); }
 function esc(v) { return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c])); }
 function niceDate(d) { if(!d) return "No date"; return new Date(d+"T12:00:00").toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"}); }
@@ -593,7 +612,7 @@ function thumbHtml(item) { return item.imageUrl ? `<img src="${esc(item.imageUrl
 function normalizeName(name) { return String(name||"").toLowerCase().replace(/[–—]/g,"-").replace(/\s*\([^)]*\)\s*/g," ").replace(/\b(new|backup|extra|unopened|opened|individual|loose|batch|carton|box|sticks|pouches|cups|exp|use soon)\b/g," ").replace(/\s+/g," ").trim(); }
 function groupKey(item) { return `${normalizeName(item.name)}|${item.category}|${item.location}`; }
 function getGrouped(list) { const map=new Map(); list.forEach(item=>{const k=groupKey(item); if(!map.has(k))map.set(k,{...item,ids:[],quantity:0,entries:[]}); const g=map.get(k); g.ids.push(item.id); g.quantity+=Number(item.quantity||0); g.entries.push(item); const soonest=g.entries.filter(e=>e.expDate).sort((a,b)=>new Date(a.expDate)-new Date(b.expDate))[0]; if(soonest)g.expDate=soonest.expDate; }); return Array.from(map.values()); }
-function getCounts() { return {expired:items.filter(i=>i.expDate&&daysUntil(i.expDate)<0).length, expiring:items.filter(i=>i.expDate&&daysUntil(i.expDate)>=0&&daysUntil(i.expDate)<=14).length, grouped:getGrouped(items).length}; }
+function getCounts() { return {expired:items.filter(i=>i.expDate&&daysUntil(i.expDate)<0).length, expiring:items.filter(i=>i.expDate&&daysUntil(i.expDate)>=0&&daysUntil(i.expDate)<=(window.ss6ExpiringDays||14)).length, grouped:getGrouped(items).length}; }
 function getLocationCounts() { const base={Fridge:0,Pantry:0,Freezer:0,Counter:0,Household:0,Other:0}; items.forEach(i=>{const loc=base.hasOwnProperty(i.location)?i.location:"Other"; base[loc]+=Number(i.quantity||0);}); return base; }
 function filteredItems() { let list=[...items]; if(state.activeLocation!=="All") list=list.filter(i=>i.location===state.activeLocation||(state.activeLocation==="Household"&&i.category==="Household")); if(state.activeCategory!=="All") list=list.filter(i=>i.category===state.activeCategory); if(state.activeMealTag!=="All") list=list.filter(i=>(i.mealTag||inferMealTagFromName(i))===state.activeMealTag); if(state.search){const q=state.search.toLowerCase(); list=list.filter(i=>(i.name||"").toLowerCase().includes(q)||(i.notes||"").toLowerCase().includes(q));} if(state.metricFilter==="expiring") list=list.filter(i=>i.expDate&&daysUntil(i.expDate)>=0&&daysUntil(i.expDate)<=14); if(state.metricFilter==="expired") list=list.filter(i=>i.expDate&&daysUntil(i.expDate)<0); if(state.grouped) list=getGrouped(list); list.sort((a,b)=>{ if(state.sort==="name")return a.name.localeCompare(b.name); if(state.sort==="category")return a.category.localeCompare(b.category); if(state.sort==="location")return a.location.localeCompare(b.location); if(state.sort==="added")return new Date(b.addedAt||0)-new Date(a.addedAt||0); const da=a.expDate?new Date(a.expDate+"T12:00:00"):new Date("2099-01-01"); const db=b.expDate?new Date(b.expDate+"T12:00:00"):new Date("2099-01-01"); return da-db; }); return list; }
 function render() { saveAll(); renderSummary(); renderLocations(); renderTable(); renderSidebar(); renderMealIdeasInline(); }
@@ -601,7 +620,7 @@ function renderSummary() { const c=getCounts(); entriesPill.textContent=`${items
 function renderLocations() { document.querySelectorAll(".loc-btn").forEach(btn=>btn.classList.toggle("active",btn.dataset.location===state.activeLocation)); }
 function renderTable() { const list=filteredItems(); const visible=list.slice(0,state.limit); listTitle.textContent=state.mode==="shopping"?`Shopping List (${shoppingList.length} items)`:`Inventory (${list.length} items)`; if(addShoppingBtn) addShoppingBtn.style.display=state.mode==="shopping"?"inline-flex":"none"; if(toggleGroupedBtn) toggleGroupedBtn.style.display=state.mode==="shopping"?"none":"grid"; loadMoreBtn.style.display=state.mode==="shopping"||state.limit>=list.length?"none":"block"; if(state.mode==="shopping"){ bulkBar.classList.remove("show"); selectedIds.clear(); itemTableBody.innerHTML=shoppingList.length?shoppingList.map(shoppingRow).join(""):`<tr><td colspan="9" style="text-align:center;padding:38px;color:var(--muted)">Shopping list is empty. Use “+ Shopping Item” to add something even if it was never in inventory.</td></tr>`; return; } renderBulkControls(visible); itemTableBody.innerHTML=visible.length?visible.map(itemRow).join(""):`<tr><td colspan="9" style="text-align:center;padding:38px;color:var(--muted)">No items found.</td></tr>`; }
 function rowIds(item) { return item.ids || [item.id]; }
-function itemRow(item) { const exp=expInfo(item.expDate); const groupedCount=item.entries?item.entries.length:1; const ids=rowIds(item); const checked=ids.every(id=>selectedIds.has(Number(id)))?"checked":""; return `<tr><td class="select-cell"><input class="bulk-check item-select" type="checkbox" ${checked} data-ids="${ids.join(',')}" onchange="toggleItemSelection(this)" title="Select item"></td><td class="item-cell"><div class="item-main"><div class="thumb">${thumbHtml(item)}</div><div><div class="item-name">${esc(item.name)}</div><div class="item-note">${esc(item.notes||(groupedCount>1?groupedCount+" grouped entries":""))}</div><span class="tag-badge">${esc(mealTagLabel(item.mealTag||inferMealTagFromName(item)))}</span></div></div></td><td class="field-cell" data-label="Category"><span class="badge cat">${esc(item.category)}</span></td><td class="field-cell" data-label="Location"><span class="badge loc">${esc(item.location)}</span></td><td class="field-cell" data-label="Qty"><strong>${item.quantity}</strong></td><td class="field-cell" data-label="Expiration"><div style="text-align:right"><strong style="color:${exp.cls==="expired"?"#e01931":exp.cls==="exp-soon"?"#e56f00":"var(--navy)"}">${niceDate(item.expDate)}</strong><div style="font-size:12px;color:${exp.cls==="expired"?"#e01931":"var(--muted)"}">${exp.label}</div></div></td><td class="field-cell" data-label="Status"><span class="badge ${item.opened?"open":"closed"}">${item.opened?"Opened":"Unopened"}</span>${openedDateHtml(item)}</td><td class="field-cell added-text" data-label="Added"><span>${addedDateText(item.addedAt)}</span></td><td class="actions-cell-wrap"><div class="actions-cell"><button class="icon-btn" data-mobile-label="Edit" onclick="editItem(${item.id})" title="Edit">✎</button><button class="icon-btn" data-mobile-label="Shop" onclick="moveToShopping(${item.id})" title="Move to shopping">🛒</button><button class="icon-btn danger" data-mobile-label="Delete" onclick="deleteItem(${item.id})" title="Delete">🗑</button></div></td></tr>`; }
+function itemRow(item) { const exp=expInfo(item.expDate); const groupedCount=item.entries?item.entries.length:1; const ids=rowIds(item); const checked=ids.every(id=>selectedIds.has(Number(id)))?"checked":""; return `<tr><td class="select-cell"><input class="bulk-check item-select" type="checkbox" ${checked} data-ids="${ids.join(',')}" onchange="toggleItemSelection(this)" title="Select item"></td><td class="item-cell"><div class="item-main"><div class="thumb">${thumbHtml(item)}</div><div><div class="item-name">${esc(item.name)}</div><div class="item-note">${esc(item.notes||(groupedCount>1?groupedCount+" grouped entries":""))}</div><span class="tag-badge">${esc(mealTagLabel(item.mealTag||inferMealTagFromName(item)))}</span></div></div></td><td class="field-cell" data-label="Category"><span class="badge cat">${esc(item.category)}</span></td><td class="field-cell" data-label="Location"><span class="badge loc">${esc(item.location)}</span></td><td class="field-cell" data-label="Qty"><span class="qty-wrap"><button class="qty-btn" type="button" onclick="ss6AdjustQty(${item.id},-1)" title="Use one">-</button><strong>${item.quantity} ${esc(item.unit||"")}</strong><button class="qty-btn" type="button" onclick="ss6AdjustQty(${item.id},1)" title="Add one">+</button></span></td><td class="field-cell" data-label="Expiration"><div style="text-align:right"><strong style="color:${exp.cls==="expired"?"#e01931":exp.cls==="exp-soon"?"#e56f00":"var(--navy)"}">${niceDate(item.expDate)}</strong><div style="font-size:12px;color:${exp.cls==="expired"?"#e01931":"var(--muted)"}">${exp.label}</div></div></td><td class="field-cell" data-label="Status"><span class="badge ${item.opened?"open":"closed"}">${item.opened?"Opened":"Unopened"}</span>${openedDateHtml(item)}</td><td class="field-cell added-text" data-label="Added"><span>${addedDateText(item.addedAt)}</span></td><td class="actions-cell-wrap"><div class="actions-cell"><button class="icon-btn" data-mobile-label="Edit" onclick="editItem(${item.id})" title="Edit">✎</button><button class="icon-btn" data-mobile-label="Shop" onclick="moveToShopping(${item.id})" title="Move to shopping">🛒</button><button class="icon-btn danger" data-mobile-label="Delete" onclick="deleteItem(${item.id})" title="Delete">🗑</button></div></td></tr>`; }
 function shoppingRow(item) { return `<tr><td class="select-cell"></td><td class="item-cell"><div class="item-main"><div class="thumb">🛒</div><div><div class="item-name">${esc(item.name)}</div><div class="item-note">${esc(item.notes||"")}</div></div></div></td><td class="field-cell" data-label="Category"><span class="badge cat">${esc(item.category||"Other")}</span></td><td class="field-cell" data-label="Location"><span class="badge loc">${esc(item.location||"")}</span></td><td class="field-cell" data-label="Qty"><strong>${item.quantity?esc(item.quantity):""}</strong></td><td class="field-cell" data-label="Expiration"><span>${item.expDate?niceDate(item.expDate):""}</span></td><td class="field-cell" data-label="Status"><span class="badge ${item.completed?"closed":"open"}">${item.completed?"Bought":"Needed"}</span></td><td class="field-cell added-text" data-label="Added"><span>${addedDateText(item.addedAt)}</span></td><td class="actions-cell-wrap"><div class="actions-cell"><button class="icon-btn" data-mobile-label="Bought" onclick="toggleShopping('${item.id}')" title="Mark bought/needed">✓</button><button class="icon-btn danger" data-mobile-label="Delete" onclick="deleteShopping('${item.id}')" title="Delete">🗑</button></div></td></tr>`; }
 function renderSidebar() { const exp=items.filter(i=>i.expDate&&daysUntil(i.expDate)>=0&&daysUntil(i.expDate)<=14).sort((a,b)=>new Date(a.expDate)-new Date(b.expDate)).slice(0,8); expiringList.innerHTML=exp.length?exp.map(i=>`<div class="mini-row"><div class="name">${esc(i.name)}</div><div class="date">${niceDate(i.expDate)}</div><div class="count-pill">${i.quantity}</div></div>`).join(""):`<div style="color:var(--muted)">No items expiring soon.</div>`; const counts=getLocationCounts(), max=Math.max(1,...Object.values(counts)), colors={Fridge:"#4c9cf5",Pantry:"#f39a46",Freezer:"#3479ff",Counter:"#8c7cf0",Household:"#3ca56a",Other:"#8d98a7"}; breakdownList.innerHTML=Object.entries(counts).map(([loc,count])=>`<div class="breakdown-row"><div><strong>${loc==="Fridge"?"❄️":loc==="Freezer"?"❄️":loc==="Pantry"?"🏠":loc==="Household"?"🧻":loc==="Counter"?"📦":"⬡"} ${loc}</strong></div><div class="progress"><span style="width:${Math.round((count/max)*100)}%;background:${colors[loc]}"></span></div><div style="text-align:right">${count} items</div></div>`).join(""); }
 const MEAL_FAV_KEY = "stocksmart_meal_favorites_" + STORAGE_KEY;
@@ -733,8 +752,8 @@ function toggleShopping(id) { shoppingList=shoppingList.map(i=>String(i.id)===St
 function clearShoppingForm() { shopName.value=""; shopCategory.value="Other"; shopLocation.value="Pantry"; shopQty.value=1; setDateValue(shopExp,""); shopNotes.value=""; }
 function openShoppingAdd() { clearShoppingForm(); openModal("shoppingModal"); }
 function saveShoppingItem() { const name=shopName.value.trim(); if(!name) return alert("Please enter an item name."); shoppingList.unshift({id:"s"+Date.now()+"-manual",name,category:shopCategory.value||"Other",location:shopLocation.value||"",quantity:Number(shopQty.value||1),expDate:shopExp.value||"",notes:shopNotes.value.trim(),addedAt:new Date().toISOString(),completed:false}); closeModal("shoppingModal"); showShopping(); }
-function backup() { const data={createdAt:new Date().toISOString(),items,nextId,shoppingList}; const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"}); const url=URL.createObjectURL(blob); const a=document.createElement("a"); a.href=url; a.download="stocksmart-backup.json"; a.click(); URL.revokeObjectURL(url); }
-function restoreFile(file) { if(!file)return; const reader=new FileReader(); reader.onload=e=>{try{const data=JSON.parse(e.target.result); const imported=Array.isArray(data)?data:data.items; if(!Array.isArray(imported))throw new Error(); items=normalizeItems(imported); shoppingList=Array.isArray(data.shoppingList)?data.shoppingList:[]; nextId=data.nextId||Math.max(0,...items.map(i=>Number(i.id)||0))+1; render(); alert("Backup restored.");}catch{alert("Could not read that backup file.");}}; reader.readAsText(file); }
+function backup() { const data={formatVersion:"stocksmart-v6",appVersion:"6.0.0",createdAt:new Date().toISOString(),items,nextId,shoppingList,mealFavorites:mealFavorites(),history:window.ss6History||[],sessions:window.ss6Sessions||[],recipes:window.ss6Recipes||[],planner:window.ss6Planner||{},settings:window.ss6Settings||{expiringDays:14},corrections:window.ss6Corrections||{},trash:window.ss6Trash||[]}; const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"}); const url=URL.createObjectURL(blob); const a=document.createElement("a"); a.href=url; a.download="stocksmart-backup.json"; a.click(); URL.revokeObjectURL(url); }
+function restoreFile(file) { if(!file)return; const reader=new FileReader(); reader.onload=e=>{try{const data=JSON.parse(e.target.result); const imported=Array.isArray(data)?data:data.items; if(!Array.isArray(imported))throw new Error("No inventory array in backup."); if(!confirm("Replace your current inventory and shopping list with this backup? Choose Cancel to keep your current data."))return; items=normalizeItems(imported); shoppingList=Array.isArray(data.shoppingList)?data.shoppingList:[]; nextId=data.nextId||Math.max(0,...items.map(i=>Number(i.id)||0))+1; if(data.formatVersion==="stocksmart-v6" && window.ss6ApplyBackup){ window.ss6ApplyBackup(data); } render(); alert("Backup restored.");}catch(err){alert("Could not read that backup file. " + (err && err.message ? err.message : ""));}}; reader.readAsText(file); }
 function recover() { if(!confirm("Reload the current backup inventory built into this app?"))return; items=normalizeItems(DEFAULT_ITEMS); shoppingList=DEFAULT_SHOPPING||[]; nextId=Math.max(0,...items.map(i=>Number(i.id)||0))+1; showInventory(); }
 function useFirst() { showInventory("expiring"); }
 function mealIdeas(open=true) { state.mealSeed++; renderMealIdeasInline(); if(open) showMealPlanner("all"); }
@@ -832,5 +851,501 @@ function runFromMenu(fn) { closeAppMenu(); setTimeout(fn, 50); }
 function init() { buildDatePickers(); migrateMealTags(); MEAL_TAGS.forEach(([value,label])=>{ mealTagFilter.insertAdjacentHTML("beforeend",`<option value="${value}">${label}</option>`); if(value!=="All") formMealTag.insertAdjacentHTML("beforeend",`<option value="${value}">${label}</option>`); }); CATEGORIES.forEach(c=>categoryFilter.insertAdjacentHTML("beforeend",`<option value="${c}">${c==="All"?"All Categories":c}</option>`)); CATEGORIES.filter(c=>c!=="All").forEach(c=>{formCategory.insertAdjacentHTML("beforeend",`<option>${c}</option>`); shopCategory.insertAdjacentHTML("beforeend",`<option>${c}</option>`);}); LOCATIONS.forEach(l=>{formLocation.insertAdjacentHTML("beforeend",`<option>${l}</option>`); shopLocation.insertAdjacentHTML("beforeend",`<option>${l}</option>`);}); addBtn.onclick=openAdd; scanBtn.onclick=()=>openScanner("add"); menuBtn.onclick=openAppMenu; closeMenuModal.onclick=closeAppMenu; document.querySelectorAll(".scan-mode-btn").forEach(btn=>btn.onclick=()=>setBarcodeMode(btn.dataset.barcodeMode)); scanMenuBtn.onclick=()=>runFromMenu(()=>openScanner("add")); addMenuBtn.onclick=()=>runFromMenu(openAdd); shoppingMenuBtn.onclick=()=>runFromMenu(showShopping); backupBtn.onclick=()=>{closeAppMenu(); backup();}; restoreInput.onchange=e=>{restoreFile(e.target.files[0]); closeAppMenu();}; recoverBtn.onclick=()=>{closeAppMenu(); recover();}; totalCard.onclick=()=>{state.metricFilter=null;state.activeLocation="All";state.grouped=false;showInventory();}; groupedCard.onclick=()=>{state.grouped=true;showInventory();}; expiringCard.onclick=()=>showInventory("expiring"); expiredCard.onclick=()=>showInventory("expired"); shoppingCard.onclick=showShopping; addShoppingBtn.onclick=openShoppingAdd; document.querySelectorAll(".loc-btn").forEach(btn=>btn.onclick=()=>{state.activeLocation=btn.dataset.location;state.metricFilter=null;state.mode="inventory";state.limit=10;render();}); searchInput.oninput=e=>{state.search=e.target.value;state.limit=10;render();}; categoryFilter.onchange=e=>{state.activeCategory=e.target.value;state.limit=10;render();}; mealTagFilter.onchange=e=>{state.activeMealTag=e.target.value;state.limit=10;render();}; sortSelect.onchange=e=>{state.sort=e.target.value;render();}; toggleGroupedBtn.onclick=()=>{state.grouped=!state.grouped;clearSelection();render();}; loadMoreBtn.onclick=()=>{state.limit+=25;render();}; selectAllVisible.onchange=e=>toggleSelectAllVisible(e.target); selectVisibleBtn.onclick=selectVisibleItems; clearSelectionBtn.onclick=clearSelection; deleteSelectedBtn.onclick=deleteSelectedItems; viewExpiringBtn.onclick=()=>showInventory("expiring"); viewAllLocationsBtn.onclick=()=>{state.activeLocation="All";showInventory();}; useFirstBtn.onclick=useFirst; cookInventoryBtn.onclick=cookFromInventory; mealIdeasBtn.onclick=()=>mealIdeas(true); useSoonMealsBtn.onclick=useSoonMeals; favoriteMealsBtn.onclick=favoriteMeals; refreshMealIdeasInline.onclick=()=>mealIdeas(false); dealsSmartBtn.onclick=weeklyCirculars; dealsMenuBtn.onclick=()=>runFromMenu(weeklyCirculars); familySyncBtn.onclick=familySync; familySyncMenuBtn.onclick=()=>runFromMenu(familySync); installHelpBtn.onclick=installHelp; installHelpMenuBtn.onclick=()=>runFromMenu(installHelp); refreshSmartBtn.onclick=renderSidebar; closeItemModal.onclick=()=>closeModal("itemModal"); cancelItemBtn.onclick=()=>closeModal("itemModal"); saveItemBtn.onclick=saveItem; formOpened.onchange=syncOpenedDateField; formName.onblur=()=>{ if(!editingId || formMealTag.value==="review-needed") formMealTag.value=inferMealTagFromName({name:formName.value,category:formCategory.value,location:formLocation.value,notes:formNotes.value}); }; formCategory.onchange=()=>{ if(formMealTag.value==="review-needed") formMealTag.value=inferMealTagFromName({name:formName.value,category:formCategory.value,location:formLocation.value,notes:formNotes.value}); }; closeShoppingModal.onclick=()=>closeModal("shoppingModal"); cancelShoppingBtn.onclick=()=>closeModal("shoppingModal"); saveShoppingBtn.onclick=saveShoppingItem; closeSmartModal.onclick=()=>closeModal("smartModal"); closeScannerBtn.onclick=closeScanner; manualBarcodeBtn.onclick=()=>{const code=manualBarcode.value.replace(/\D/g,""); if(!code)return alert("Enter a barcode number."); handleBarcode(code);}; if("serviceWorker" in navigator) window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js").catch(()=>{})); render(); }
 init();
 </script>
+<script>
+/* StockSmart v6 upgrade, 2026-11-03.
+   Added on top of the existing app. It does not change the existing
+   inventory, shopping, or meal-favorite localStorage keys, and it does
+   not delete DEFAULT_ITEMS. New data lives in its own keys so an old
+   backup can still be restored. */
+var ss6ExpiringDays = 14;
+function ss6Read(key, fallback){ try{ var v = JSON.parse(localStorage.getItem(key) || "null"); return (v === null || v === undefined) ? fallback : v; }catch(e){ return fallback; } }
+function ss6Write(key, value){ try{ localStorage.setItem(key, JSON.stringify(value)); }catch(e){} }
+var ss6History = ss6Read("stocksmart_v6_history", []);
+var ss6Sessions = ss6Read("stocksmart_v6_sessions", []);
+var ss6Recipes = ss6Read("stocksmart_v6_recipes", null);
+var ss6Planner = ss6Read("stocksmart_v6_planner", {});
+var ss6Settings = ss6Read("stocksmart_v6_settings", {expiringDays: 14});
+var ss6Corrections = ss6Read("stocksmart_v6_corrections", {});
+var ss6Trash = ss6Read("stocksmart_v6_trash", []);
+var ss6ActiveSessionId = ss6Read("stocksmart_v6_active_session", null);
+if (ss6Settings && ss6Settings.expiringDays) ss6ExpiringDays = Number(ss6Settings.expiringDays) || 14;
+if (!Array.isArray(ss6Recipes)) {
+  ss6Recipes = [
+    {id: 1, title: "Buttered Noodles with Parmesan", category: "Dinner", servings: 4, prepMinutes: 15, favorite: true, ingredients: [{name: "Noodles", qty: 1, unit: "Package"}, {name: "Butter", qty: 2, unit: "Ounce"}, {name: "Parmesan", qty: 1, unit: "Each"}], steps: ["Cook noodles as directed.", "Drain, stir in butter until melted.", "Top with Parmesan and serve."]},
+    {id: 2, title: "Grilled Cheese", category: "Lunch", servings: 2, prepMinutes: 10, favorite: false, ingredients: [{name: "Bread", qty: 4, unit: "Each"}, {name: "Cheddar", qty: 2, unit: "Each"}, {name: "Butter", qty: 1, unit: "Ounce"}], steps: ["Butter the outside of the bread.", "Add cheese, cook in a pan until golden on both sides."]},
+    {id: 3, title: "Mac and Cheese", category: "Dinner", servings: 4, prepMinutes: 20, favorite: false, ingredients: [{name: "Macaroni", qty: 1, unit: "Box"}, {name: "Cheddar", qty: 2, unit: "Each"}, {name: "Milk", qty: 1, unit: "Each"}], steps: ["Cook macaroni, drain.", "Stir in cheese and a splash of milk until creamy."]}
+  ];
+  ss6Write("stocksmart_v6_recipes", ss6Recipes);
+}
+function ss6SaveAll(){
+  ss6Write("stocksmart_v6_history", ss6History);
+  ss6Write("stocksmart_v6_sessions", ss6Sessions);
+  ss6Write("stocksmart_v6_recipes", ss6Recipes);
+  ss6Write("stocksmart_v6_planner", ss6Planner);
+  ss6Write("stocksmart_v6_settings", ss6Settings);
+  ss6Write("stocksmart_v6_corrections", ss6Corrections);
+  ss6Write("stocksmart_v6_trash", ss6Trash);
+  ss6Write("stocksmart_v6_active_session", ss6ActiveSessionId);
+}
+function ss6ApplyBackup(data){
+  if (Array.isArray(data.history)) ss6History = data.history;
+  if (Array.isArray(data.sessions)) ss6Sessions = data.sessions;
+  if (Array.isArray(data.recipes)) ss6Recipes = data.recipes;
+  if (data.planner && typeof data.planner === "object") ss6Planner = data.planner;
+  if (data.settings && typeof data.settings === "object") { ss6Settings = data.settings; ss6ExpiringDays = Number(ss6Settings.expiringDays) || 14; }
+  if (data.corrections && typeof data.corrections === "object") ss6Corrections = data.corrections;
+  if (Array.isArray(data.trash)) ss6Trash = data.trash;
+  ss6ActiveSessionId = null;
+  ss6SaveAll();
+}
+function ss6Norm(s){ return String(s || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim(); }
+function ss6LocalDate(iso){
+  try { var d = new Date(iso); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); }
+  catch(e){ return ""; }
+}
+function ss6TodayLocal(){ return ss6LocalDate(new Date().toISOString()); }
+function ss6ActiveSession(){ return ss6Sessions.find(function(s){ return s.id === ss6ActiveSessionId; }) || null; }
+function ss6LogAddition(item, source){
+  if (!item) return;
+  var entry = {at: new Date().toISOString(), name: item.name, qty: Number(item.quantity || 0), unit: item.unit || "Each", location: item.location || "", expDate: item.expDate || "", barcode: item.barcode || "", source: source || "manual", sessionId: ss6ActiveSessionId || null, itemId: item.id};
+  ss6History.unshift(entry);
+  var s = ss6ActiveSession();
+  if (s) { s.entries.push(entry); }
+  ss6SaveAll();
+}
+function ss6UseByAfterOpening(item){
+  if (!item || !item.openedDate || !item.afterOpeningDays) return "";
+  var d = new Date(item.openedDate + "T12:00:00");
+  if (isNaN(d)) return "";
+  d.setDate(d.getDate() + Number(item.afterOpeningDays));
+  return ss6LocalDate(d.toISOString());
+}
+/* Quantity: grouped rows pass the first entry id. Adjust the soonest-expiring
+   batch first, so older food is used before newer food. Never go below zero. */
+function ss6AdjustQty(id, delta){
+  var target = items.find(function(i){ return Number(i.id) === Number(id); });
+  if (!target) return;
+  var group = items.filter(function(i){ return ss6Norm(i.name) === ss6Norm(target.name) && i.location === target.location; });
+  group.sort(function(a, b){ return String(a.expDate || "9999") < String(b.expDate || "9999") ? -1 : 1; });
+  var entry = group[0] || target;
+  var next = Number(entry.quantity || 0) + delta;
+  if (next < 0) return;
+  if (delta < 0 && next === 0) {
+    if (!confirm("Use up the last of this batch and remove it?")) return;
+    items = items.filter(function(i){ return Number(i.id) !== Number(entry.id); });
+    ss6History.unshift({at: new Date().toISOString(), name: entry.name, qty: 1, unit: entry.unit || "Each", location: entry.location, expDate: entry.expDate || "", barcode: entry.barcode || "", source: "used-up", sessionId: null, itemId: entry.id});
+  } else {
+    entry.quantity = next;
+  }
+  ss6SaveAll(); render();
+}
+/* Wrap saveItem: preserve barcode/unit/after-opening days (the original
+   save drops barcode on edit), log additions, mark matching shopping
+   items bought, and remember location corrections. */
+var ss6OrigSaveItem = saveItem;
+saveItem = function(){
+  var beforeEdit = editingId ? items.find(function(i){ return Number(i.id) === Number(editingId); }) : null;
+  var beforeQty = beforeEdit ? Number(beforeEdit.quantity || 0) : 0;
+  var beforeNext = nextId;
+  var unitEl = document.getElementById("formUnit");
+  var barcodeEl = document.getElementById("formBarcode");
+  var afterEl = document.getElementById("formAfterDays");
+  var unit = unitEl ? unitEl.value : "Each";
+  var barcode = barcodeEl ? barcodeEl.value.replace(/\D/g, "") : "";
+  var afterDays = afterEl ? afterEl.value : "";
+  ss6OrigSaveItem();
+  var saved = null;
+  if (beforeEdit) { saved = items.find(function(i){ return Number(i.id) === Number(editingId); }); }
+  else { saved = items.find(function(i){ return Number(i.id) === Number(beforeNext); }); }
+  if (!saved) return;
+  saved.unit = unit; saved.barcode = barcode || (beforeEdit ? beforeEdit.barcode || "" : "");
+  saved.afterOpeningDays = afterDays;
+  if (saved.openedDate && saved.afterOpeningDays) { saved.useByAfterOpening = ss6UseByAfterOpening(saved); }
+  if (!beforeEdit) {
+    ss6LogAddition(saved, window.ss6LastScanBarcode ? "scan" : "manual");
+  } else if (Number(saved.quantity || 0) > beforeQty) {
+    var added = Object.assign({}, saved, {quantity: Number(saved.quantity || 0) - beforeQty});
+    ss6LogAddition(added, "manual");
+  }
+  var keyName = ss6Norm(saved.name);
+  if (keyName) ss6Corrections["name:" + keyName] = saved.location;
+  if (saved.barcode) ss6Corrections["barcode:" + saved.barcode] = saved.location;
+  var matched = false;
+  shoppingList = shoppingList.map(function(s){
+    if (!s.completed && ss6Norm(s.name) === keyName) { matched = true; return Object.assign({}, s, {completed: true}); }
+    return s;
+  });
+  if (matched) { /* bought, not removed, so a mistaken match stays visible */ }
+  ss6SaveAll(); saveAll(); render();
+};
+/* Wrap delete: keep a trash copy so an accidental removal can be restored. */
+var ss6OrigDeleteItem = deleteItem;
+deleteItem = function(id){
+  var target = items.find(function(i){ return Number(i.id) === Number(id); });
+  if (target) ss6Trash.unshift(Object.assign({}, target, {deletedAt: new Date().toISOString()}));
+  ss6OrigDeleteItem(id);
+  ss6SaveAll();
+};
+function ss6RestoreTrash(index){
+  var t = ss6Trash[index];
+  if (!t) return;
+  ss6Trash.splice(index, 1);
+  var copy = Object.assign({}, t); delete copy.deletedAt;
+  copy.id = nextId++;
+  items.push(normalizeItems([copy])[0] || copy);
+  ss6SaveAll(); saveAll(); render(); ss6ShowSettings();
+}
+/* Wrap barcode handling: duplicate-scan protection, and remembered
+   location corrections plus the scanned barcode on the form. */
+var ss6OrigHandleBarcode = handleBarcode;
+var ss6LastBarcode = "", ss6LastBarcodeAt = 0;
+window.ss6LastScanBarcode = "";
+handleBarcode = async function(barcode){
+  var clean = String(barcode || "").replace(/\D/g, "");
+  var now = Date.now();
+  if (clean && clean === ss6LastBarcode && (now - ss6LastBarcodeAt) < 3000) return;
+  ss6LastBarcode = clean; ss6LastBarcodeAt = now; window.ss6LastScanBarcode = clean;
+  await ss6OrigHandleBarcode(barcode);
+  var bEl = document.getElementById("formBarcode");
+  if (bEl && clean) bEl.value = clean;
+  var nameEl = document.getElementById("formName");
+  var locEl = document.getElementById("formLocation");
+  if (locEl) {
+    var corr = (clean && ss6Corrections["barcode:" + clean]) || (nameEl && ss6Corrections["name:" + ss6Norm(nameEl.value)]);
+    if (corr) locEl.value = corr;
+  }
+  var uEl = document.getElementById("formUnit");
+  if (uEl) uEl.value = "Each";
+};
+/* History view */
+function ss6ShowHistory(){
+  closeAppMenu();
+  var date = ss6TodayLocal();
+  smartModalTitle.textContent = "Addition History";
+  var list = ss6History.filter(function(e){ return ss6LocalDate(e.at) === date; });
+  smartModalBody.innerHTML = '<p style="color:var(--muted)">Pick a day to compare what was added with what is in your cart.</p>'
+    + '<label>Date <input type="date" id="ss6HistoryDate" class="v6-input" value="' + date + '"></label>'
+    + '<div id="ss6HistoryList" style="margin-top:10px">' + ss6HistoryHtml(list) + '</div>'
+    + '<div class="v6-row" style="margin-top:10px"><button class="secondary" onclick="ss6ShowSessionSummary()">Shopping session summary</button><button class="secondary" onclick="ss6StartSession()">Start shopping session</button></div>';
+  openModal("smartModal");
+  document.getElementById("ss6HistoryDate").onchange = function(){
+    var d = this.value;
+    smartModalBody.querySelector("#ss6HistoryList").innerHTML = ss6HistoryHtml(ss6History.filter(function(e){ return ss6LocalDate(e.at) === d; }));
+  };
+}
+function ss6HistoryHtml(list){
+  if (!list.length) return '<p style="color:var(--muted)">Nothing added on that day yet.</p>';
+  return list.map(function(e){
+    var t = new Date(e.at);
+    return '<div class="v6-card"><strong>' + esc(e.name) + '</strong><div style="color:var(--muted)">'
+      + e.qty + ' ' + esc(e.unit || "") + ' &middot; ' + esc(e.location || "") + (e.expDate ? ' &middot; expires ' + esc(e.expDate) : '')
+      + ' &middot; ' + t.toLocaleTimeString([], {hour: "numeric", minute: "2-digit"})
+      + (e.barcode ? ' &middot; barcode ' + esc(e.barcode) : '') + ' &middot; ' + esc(e.source || "") + '</div></div>';
+  }).join("");
+}
+/* Shopping sessions */
+function ss6StartSession(){
+  var s = {id: "s" + Date.now(), startedAt: new Date().toISOString(), endedAt: null, entries: []};
+  ss6Sessions.unshift(s); ss6ActiveSessionId = s.id; ss6SaveAll();
+  alert("Shopping session started. Items you add now will be grouped into this session until you finish it.");
+  ss6ShowSessionSummary();
+}
+function ss6EndSession(){
+  var s = ss6ActiveSession();
+  if (!s) return;
+  s.endedAt = new Date().toISOString(); ss6ActiveSessionId = null; ss6SaveAll();
+  ss6ShowSessionSummary();
+}
+function ss6ShowSessionSummary(){
+  closeAppMenu();
+  var s = ss6ActiveSession();
+  var latest = s || ss6Sessions[0];
+  smartModalTitle.textContent = "Shopping Session";
+  if (!latest) {
+    smartModalBody.innerHTML = '<p>No shopping session yet.</p><button class="primary" onclick="ss6StartSession()">Start shopping session</button>';
+    openModal("smartModal"); return;
+  }
+  var unique = {};
+  latest.entries.forEach(function(e){ unique[ss6Norm(e.name)] = true; });
+  var totalQty = latest.entries.reduce(function(a, e){ return a + Number(e.qty || 0); }, 0);
+  var manual = latest.entries.filter(function(e){ return e.source === "manual"; }).length;
+  var scanned = latest.entries.filter(function(e){ return e.source === "scan"; }).length;
+  smartModalBody.innerHTML = '<div class="v6-card"><strong>' + (latest.endedAt ? "Finished session" : "Active session") + '</strong>'
+    + '<div>Started: ' + new Date(latest.startedAt).toLocaleString() + '</div>'
+    + (latest.endedAt ? '<div>Finished: ' + new Date(latest.endedAt).toLocaleString() + '</div>' : '')
+    + '<div>Unique products: ' + Object.keys(unique).length + ' &middot; Total quantity added: ' + totalQty + '</div>'
+    + '<div>Scanned entries: ' + scanned + ' &middot; Manual entries: ' + manual + '</div></div>'
+    + (latest.entries.length ? ss6HistoryHtml(latest.entries) : '<p style="color:var(--muted)">Nothing added in this session yet. Scan or add items, then come back here to compare with your cart.</p>')
+    + '<div class="v6-row" style="margin-top:10px">'
+    + (latest.endedAt ? '<button class="primary" onclick="ss6StartSession()">Start a new session</button>' : '<button class="primary" onclick="ss6EndSession()">Finish session</button>')
+    + '<button class="secondary" onclick="ss6ShowHistory()">Addition history</button></div>';
+  openModal("smartModal");
+}
+/* Recipes */
+function ss6RecipeById(id){ return ss6Recipes.find(function(r){ return Number(r.id) === Number(id); }); }
+function ss6InventoryForIngredient(name){
+  var n = ss6Norm(name);
+  return items.filter(function(i){
+    var iname = ss6Norm(i.name);
+    return iname && (iname.indexOf(n) !== -1 || n.indexOf(iname) !== -1);
+  });
+}
+function ss6RecipeMatch(recipe){
+  var available = [], missing = [], useSoon = [];
+  (recipe.ingredients || []).forEach(function(ing){
+    var found = ss6InventoryForIngredient(ing.name);
+    var qty = found.reduce(function(a, i){ return a + Number(i.quantity || 0); }, 0);
+    if (!found.length || qty < Number(ing.qty || 0)) { missing.push(ing); }
+    else {
+      available.push(ing);
+      var soon = found.some(function(i){ return i.expDate && daysUntil(i.expDate) >= 0 && daysUntil(i.expDate) <= ss6ExpiringDays; });
+      if (soon) useSoon.push(ing);
+    }
+  });
+  var status = missing.length ? "Missing Ingredients" : (useSoon.length ? "Use Soon" : "Ready to Make");
+  return {available: available, missing: missing, useSoon: useSoon, status: status};
+}
+function ss6ShowRecipes(){
+  closeAppMenu();
+  smartModalTitle.textContent = "Recipes";
+  smartModalBody.innerHTML = '<div class="v6-row" style="margin-bottom:10px"><button class="primary" onclick="ss6EditRecipe(null)">Add recipe</button><button class="secondary" onclick="ss6ShowPlanner()">Meal planner</button></div>'
+    + ss6Recipes.map(function(r){
+      var m = ss6RecipeMatch(r);
+      return '<div class="v6-card"><strong>' + esc(r.title) + '</strong> ' + (r.favorite ? "⭐" : "") + '<div style="color:var(--muted)">' + esc(r.category || "") + ' &middot; ' + (r.servings || "") + ' servings &middot; ' + (r.prepMinutes || "") + ' min</div>'
+        + '<div><span class="meal-tag ' + (m.status === "Ready to Make" ? "good" : m.status === "Use Soon" ? "warn" : "miss") + '">' + m.status + '</span> '
+        + m.available.length + ' on hand, ' + m.missing.length + ' missing' + (m.useSoon.length ? ', ' + m.useSoon.length + ' use soon' : '') + '</div>'
+        + '<div class="v6-row" style="margin-top:8px"><button class="secondary" onclick="ss6ShowRecipe(' + r.id + ')">View</button><button class="secondary" onclick="ss6EditRecipe(' + r.id + ')">Edit</button><button class="secondary" onclick="ss6ToggleRecipeFav(' + r.id + ')">' + (r.favorite ? "Unfavorite" : "Favorite") + '</button><button class="secondary" onclick="ss6DeleteRecipe(' + r.id + ')">Delete</button></div></div>';
+    }).join("") || '<p>No recipes yet.</p>';
+  openModal("smartModal");
+}
+function ss6ShowRecipe(id){
+  var r = ss6RecipeById(id); if (!r) return;
+  var m = ss6RecipeMatch(r);
+  smartModalTitle.textContent = r.title;
+  smartModalBody.innerHTML = '<div style="color:var(--muted)">' + esc(r.category || "") + ' &middot; ' + (r.servings || "") + ' servings &middot; ' + (r.prepMinutes || "") + ' min &middot; ' + m.status + '</div>'
+    + '<h4>Ingredients</h4><ul>' + (r.ingredients || []).map(function(ing){
+      var miss = m.missing.indexOf(ing) !== -1;
+      return '<li>' + esc(ing.name) + ' ' + ing.qty + ' ' + esc(ing.unit || "") + (miss ? ' <strong style="color:#c91f35">(missing)</strong>' : ' <strong style="color:#157a37">(on hand)</strong>') + '</li>';
+    }).join("") + '</ul>'
+    + '<h4>Instructions</h4><ol>' + (r.steps || []).map(function(s){ return '<li>' + esc(s) + '</li>'; }).join("") + '</ol>'
+    + '<div class="v6-row"><button class="primary" onclick="ss6MadeThisMeal(' + r.id + ')">Made This Meal</button>'
+    + (m.missing.length ? '<button class="secondary" onclick="ss6AddMissingToShopping(' + r.id + ')">Add missing to shopping</button>' : '')
+    + '<button class="secondary" onclick="ss6ShowRecipes()">Back to recipes</button></div>';
+  openModal("smartModal");
+}
+function ss6EditRecipe(id){
+  var r = id ? ss6RecipeById(id) : {title: "", category: "Dinner", servings: 4, prepMinutes: 15, favorite: false, ingredients: [], steps: []};
+  if (!r) return;
+  smartModalTitle.textContent = id ? "Edit Recipe" : "Add Recipe";
+  var ingText = (r.ingredients || []).map(function(i){ return i.name + " | " + i.qty + " | " + (i.unit || "Each"); }).join("\n");
+  smartModalBody.innerHTML = '<div class="v6-grid">'
+    + '<label class="full">Title<input id="ss6RTitle" class="v6-input" value="' + esc(r.title) + '"></label>'
+    + '<label>Category<select id="ss6RCategory" class="v6-input"><option>Breakfast</option><option>Lunch</option><option>Dinner</option><option>Snacks</option></select></label>'
+    + '<label>Servings<input id="ss6RServings" type="number" class="v6-input" value="' + (r.servings || 4) + '"></label>'
+    + '<label>Prep minutes<input id="ss6RPrep" type="number" class="v6-input" value="' + (r.prepMinutes || 15) + '"></label>'
+    + '</div><label style="display:block;margin-top:10px">Ingredients, one per line: name | qty | unit<textarea id="ss6RIng" class="v6-input" rows="5">' + esc(ingText) + '</textarea></label>'
+    + '<label style="display:block;margin-top:10px">Instructions, one step per line<textarea id="ss6RSteps" class="v6-input" rows="5">' + esc((r.steps || []).join("\n")) + '</textarea></label>'
+    + '<label style="display:flex;gap:8px;margin-top:10px"><input type="checkbox" id="ss6RFav" ' + (r.favorite ? "checked" : "") + '> Favorite</label>'
+    + '<div class="v6-row" style="margin-top:10px"><button class="primary" onclick="ss6SaveRecipe(' + (id || "null") + ')">Save recipe</button><button class="secondary" onclick="ss6ShowRecipes()">Cancel</button></div>';
+  openModal("smartModal");
+  var cat = document.getElementById("ss6RCategory"); if (cat) cat.value = r.category || "Dinner";
+}
+function ss6SaveRecipe(id){
+  var title = document.getElementById("ss6RTitle").value.trim();
+  if (!title) { alert("Please enter a recipe title."); return; }
+  var ings = document.getElementById("ss6RIng").value.split("\n").map(function(line){
+    var parts = line.split("|").map(function(p){ return p.trim(); });
+    if (!parts[0]) return null;
+    return {name: parts[0], qty: Number(parts[1] || 1) || 1, unit: parts[2] || "Each"};
+  }).filter(Boolean);
+  var rec = {id: id || Date.now(), title: title, category: document.getElementById("ss6RCategory").value, servings: Number(document.getElementById("ss6RServings").value || 4), prepMinutes: Number(document.getElementById("ss6RPrep").value || 15), favorite: !!document.getElementById("ss6RFav").checked, ingredients: ings, steps: document.getElementById("ss6RSteps").value.split("\n").map(function(s){ return s.trim(); }).filter(Boolean)};
+  if (id) { ss6Recipes = ss6Recipes.map(function(r){ return Number(r.id) === Number(id) ? rec : r; }); }
+  else { ss6Recipes.unshift(rec); }
+  ss6SaveAll(); ss6ShowRecipes();
+}
+function ss6DeleteRecipe(id){
+  if (!confirm("Delete this recipe?")) return;
+  ss6Recipes = ss6Recipes.filter(function(r){ return Number(r.id) !== Number(id); });
+  Object.keys(ss6Planner).forEach(function(d){ if (Number(ss6Planner[d]) === Number(id)) delete ss6Planner[d]; });
+  ss6SaveAll(); ss6ShowRecipes();
+}
+function ss6ToggleRecipeFav(id){
+  ss6Recipes = ss6Recipes.map(function(r){ return Number(r.id) === Number(id) ? Object.assign({}, r, {favorite: !r.favorite}) : r; });
+  ss6SaveAll(); ss6ShowRecipes();
+}
+function ss6AddMissingToShopping(id){
+  var r = ss6RecipeById(id); if (!r) return;
+  var m = ss6RecipeMatch(r);
+  if (!m.missing.length) { alert("Nothing is missing for this recipe."); return; }
+  var added = 0;
+  m.missing.forEach(function(ing){
+    var exists = shoppingList.some(function(s){ return !s.completed && ss6Norm(s.name) === ss6Norm(ing.name); });
+    if (!exists) {
+      shoppingList.unshift({id: "s" + Date.now() + "-meal-" + Math.random().toString(16).slice(2), name: ing.name, category: "Other", location: "", quantity: ing.qty, expDate: "", notes: "Needed for: " + r.title, addedAt: new Date().toISOString(), completed: false});
+      added++;
+    }
+  });
+  saveAll(); render();
+  alert(added ? ("Added " + added + " missing ingredient(s) to your shopping list.") : "Those ingredients are already on your shopping list.");
+}
+/* Planner */
+var ss6Days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+function ss6ShowPlanner(){
+  closeAppMenu();
+  smartModalTitle.textContent = "Meal Planner, 7 Days";
+  var soon = items.filter(function(i){ return i.expDate && daysUntil(i.expDate) >= 0 && daysUntil(i.expDate) <= ss6ExpiringDays; });
+  var suggestion = "";
+  if (soon.length) {
+    var names = soon.slice(0, 5).map(function(i){ return i.name; }).join(", ");
+    suggestion = '<div class="v6-card"><strong>Use soon:</strong> ' + esc(names) + '. Pick a recipe that uses one of these first.</div>';
+  }
+  smartModalBody.innerHTML = suggestion + ss6Days.map(function(day){
+    var rid = ss6Planner[day];
+    var r = rid ? ss6RecipeById(rid) : null;
+    return '<div class="v6-card"><strong>' + day + '</strong><div>' + (r ? esc(r.title) : '<span style="color:var(--muted)">No meal planned</span>') + '</div>'
+      + '<div class="v6-row" style="margin-top:8px"><select class="v6-input" id="ss6Plan-' + day + '" style="flex:1"><option value="">No meal</option>'
+      + ss6Recipes.map(function(rec){ return '<option value="' + rec.id + '"' + (Number(rid) === Number(rec.id) ? " selected" : "") + '>' + esc(rec.title) + '</option>'; }).join("")
+      + '</select><button class="secondary" onclick="ss6AssignMeal(\'' + day + '\')">Save</button>'
+      + (r ? '<button class="secondary" onclick="ss6ShowRecipe(' + r.id + ')">View</button>' : '') + '</div></div>';
+  }).join("") + '<button class="secondary" onclick="ss6ShowRecipes()">Back to recipes</button>';
+  openModal("smartModal");
+}
+function ss6AssignMeal(day){
+  var sel = document.getElementById("ss6Plan-" + day);
+  if (!sel) return;
+  if (sel.value) ss6Planner[day] = Number(sel.value); else delete ss6Planner[day];
+  ss6SaveAll(); ss6ShowPlanner();
+}
+/* Made This Meal: show proposed deductions, confirm, then use oldest batches first. */
+function ss6MadeThisMeal(id){
+  var r = ss6RecipeById(id); if (!r) return;
+  var plan = [];
+  var short = [];
+  (r.ingredients || []).forEach(function(ing){
+    var found = ss6InventoryForIngredient(ing.name);
+    found.sort(function(a, b){ return String(a.expDate || "9999") < String(b.expDate || "9999") ? -1 : 1; });
+    var need = Number(ing.qty || 0), have = found.reduce(function(a, i){ return a + Number(i.quantity || 0); }, 0);
+    if (have < need) short.push(ing.name);
+    var remaining = need;
+    found.forEach(function(item){
+      if (remaining <= 0) return;
+      var take = Math.min(Number(item.quantity || 0), remaining);
+      if (take > 0) { plan.push({id: item.id, name: item.name, take: take}); remaining -= take; }
+    });
+  });
+  if (short.length) {
+    if (!confirm("Some ingredients are short: " + short.join(", ") + ". Still deduct what is on hand?")) return;
+  } else {
+    if (!confirm("Deduct these from inventory?\n" + plan.map(function(p){ return p.name + ": " + p.take; }).join("\n"))) return;
+  }
+  plan.forEach(function(p){
+    var item = items.find(function(i){ return Number(i.id) === Number(p.id); });
+    if (!item) return;
+    item.quantity = Number(item.quantity || 0) - p.take;
+    if (item.quantity <= 0) items = items.filter(function(i){ return Number(i.id) !== Number(p.id); });
+  });
+  saveAll(); render(); ss6SaveAll();
+  alert("Meal recorded. Inventory updated from the oldest batches first.");
+}
+/* Batches view and settings */
+function ss6ShowBatches(){
+  var groups = {};
+  items.forEach(function(i){
+    var k = ss6Norm(i.name) + "|" + i.location;
+    if (!groups[k]) groups[k] = [];
+    groups[k].push(i);
+  });
+  var html = Object.keys(groups).filter(function(k){ return groups[k].length > 1; }).map(function(k){
+    var list = groups[k].slice().sort(function(a, b){ return String(a.expDate || "9999") < String(b.expDate || "9999") ? -1 : 1; });
+    return '<div class="v6-card"><strong>' + esc(list[0].name) + '</strong><div style="color:var(--muted)">' + esc(list[0].location) + '</div><ul>'
+      + list.map(function(i){ return '<li>' + i.quantity + ' ' + esc(i.unit || "") + ' &middot; expires ' + esc(i.expDate || "unknown") + (i.opened ? ' &middot; opened ' + esc(i.openedDate || "") + (i.afterOpeningDays ? ', use within ' + i.afterOpeningDays + ' days' + (i.useByAfterOpening ? ' (by ' + i.useByAfterOpening + ')' : '') : '') : '') + '</li>'; }).join("")
+      + '</ul></div>';
+  }).join("");
+  smartModalTitle.textContent = "Batches";
+  smartModalBody.innerHTML = html || '<p>Each product with more than one expiration batch will appear here. Adding the same product with a different expiration date already creates a separate batch, and quantity buttons use the oldest batch first.</p>';
+  openModal("smartModal");
+}
+function ss6ShowSettings(){
+  closeAppMenu();
+  smartModalTitle.textContent = "Settings";
+  smartModalBody.innerHTML = '<label>Expiring soon threshold (days)<select id="ss6ExpDays" class="v6-input"><option value="3">3</option><option value="5">5</option><option value="7">7</option><option value="14">14</option><option value="30">30</option></select></label>'
+    + '<div class="v6-row" style="margin-top:10px"><button class="primary" onclick="ss6SaveSettings()">Save settings</button><button class="secondary" onclick="ss6ShowBatches()">View batches</button></div>'
+    + '<h4>Recently deleted (trash)</h4>'
+    + (ss6Trash.length ? ss6Trash.slice(0, 10).map(function(t, idx){ return '<div class="v6-card">' + esc(t.name) + ' &middot; ' + t.quantity + ' ' + esc(t.unit || "") + ' <button class="secondary" onclick="ss6RestoreTrash(' + idx + ')">Restore</button></div>'; }).join("") : '<p style="color:var(--muted)">Trash is empty.</p>')
+    + '<p style="color:var(--muted)">Your original inventory and shopping list keys are unchanged. New history, sessions, recipes, and planner data are stored separately and are included in v6 backups.</p>';
+  openModal("smartModal");
+  var sel = document.getElementById("ss6ExpDays"); if (sel) sel.value = String(ss6ExpiringDays);
+}
+function ss6SaveSettings(){
+  var sel = document.getElementById("ss6ExpDays");
+  ss6ExpiringDays = Number(sel.value) || 14;
+  ss6Settings.expiringDays = ss6ExpiringDays;
+  ss6SaveAll(); render();
+  alert("Settings saved. Expiring soon now means within " + ss6ExpiringDays + " days.");
+}
+/* Menu wiring for the new tiles */
+document.getElementById("ss6HistoryBtn").onclick = function(){ ss6ShowHistory(); };
+document.getElementById("ss6SessionBtn").onclick = function(){ ss6ShowSessionSummary(); };
+document.getElementById("ss6RecipesBtn").onclick = function(){ ss6ShowRecipes(); };
+document.getElementById("ss6PlannerBtn").onclick = function(){ ss6ShowPlanner(); };
+document.getElementById("ss6SettingsBtn").onclick = function(){ ss6ShowSettings(); };
+/* Item form defaults when opening a manual add: keep the existing openAdd
+   flow, then fill the new fields for a new item. */
+var ss6OrigOpenAdd = openAdd;
+openAdd = function(){
+  ss6OrigOpenAdd();
+  var u = document.getElementById("formUnit"); if (u) u.value = "Each";
+  var b = document.getElementById("formBarcode"); if (b) b.value = "";
+  var a = document.getElementById("formAfterDays"); if (a) a.value = "";
+};
+/* PWA update: show a banner when a new service worker is waiting, instead
+   of silently serving the old cached version. */
+function ss6ApplyUpdate(){
+  if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+    navigator.serviceWorker.controller.postMessage({type: "SKIP_WAITING"});
+  }
+  setTimeout(function(){ location.reload(); }, 300);
+}
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.getRegistration("./service-worker.js").then(function(reg){
+    if (!reg) return;
+    reg.update().catch(function(){});
+    reg.addEventListener("updatefound", function(){
+      var sw = reg.installing;
+      if (!sw) return;
+      sw.addEventListener("statechange", function(){
+        if (sw.state === "installed" && navigator.serviceWorker.controller) {
+          var banner = document.getElementById("ss6UpdateBanner");
+          if (banner) banner.classList.add("show");
+        }
+      });
+    });
+  }).catch(function(){});
+}
+
+/* v6 fixups: rebind buttons that init() already captured as function
+   references, and fill the new form fields when editing or scanning. */
+var ss6OrigEditItem = editItem;
+editItem = function(id){
+  ss6OrigEditItem(id);
+  var t = items.find(function(i){ return Number(i.id) === Number(id); });
+  if (!t) return;
+  var u = document.getElementById("formUnit"); if (u) u.value = t.unit || "Each";
+  var b = document.getElementById("formBarcode"); if (b) b.value = t.barcode || "";
+  var a = document.getElementById("formAfterDays"); if (a) a.value = t.afterOpeningDays || "";
+};
+if (typeof startScannedAdd === "function") {
+  var ss6OrigStartScanned = startScannedAdd;
+  startScannedAdd = function(barcode){
+    ss6OrigStartScanned(barcode);
+    var b = document.getElementById("formBarcode"); if (b && barcode) b.value = String(barcode).replace(/\D/g, "");
+  };
+}
+var saveBtn = document.getElementById("saveItemBtn"); if (saveBtn) saveBtn.onclick = saveItem;
+var addBtnEl = document.getElementById("addBtn"); if (addBtnEl) addBtnEl.onclick = openAdd;
+var addMenuEl = document.getElementById("addMenuBtn"); if (addMenuEl) addMenuEl.onclick = function(){ runFromMenu(openAdd); };
+render();
+</script>
+
 </body>
 </html>
