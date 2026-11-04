@@ -285,6 +285,17 @@ input:focus, select:focus { box-shadow:0 0 0 3px rgba(60,198,183,.2); border-col
 #itemModal.simple .advanced-field{display:none !important}
 #itemModal.simple #ss7SimpleHint{display:block}
 #ss7SimpleHint{display:none}
+
+/* Calmer home screen (ss10): calm mode hides metrics and full dashboard, shows only calm section. */
+body.ss10-calm .metrics{display:none}
+body.ss10-calm main.dashboard{display:none}
+#ss10CalmBody{display:none}
+body.ss10-calm #ss10CalmBody{display:block}
+.ss10-calmtile{width:100%;text-align:left}
+.ss10-use-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid #eef}
+.ss10-use-row:first-of-type{border-top:none}
+.ss10-use-name{font-weight:800;flex:1;min-width:0}
+.ss10-use-meta{color:var(--muted);font-size:13px}
 </style>
 </head>
 <body>
@@ -308,6 +319,26 @@ input:focus, select:focus { box-shadow:0 0 0 3px rgba(60,198,183,.2); border-col
       <button class="action-tile" id="menuBtn"><span class="ico">☰</span><span>Menu</span></button>
     </div>
   </header>
+
+
+<section class="panel" id="ss10Calm">
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+    <div class="section-title" style="margin:0">Home</div>
+    <button type="button" id="ss10HomeModeBtn" class="second">Show everything</button>
+  </div>
+  <div id="ss10CalmBody">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px">
+      <button type="button" class="action-tile ss10-calmtile" id="ss10ScanBtn"><span class="ico">📷</span><span>Scan</span></button>
+      <button type="button" class="action-tile ss10-calmtile" id="ss10ShoppingBtn"><span class="ico">🛒</span><span>Shopping List</span><small id="ss10ShoppingCount">0 items</small></button>
+    </div>
+    <div style="margin-top:16px">
+      <div class="section-title">Use Tonight</div>
+      <p style="color:var(--muted);margin:4px 0 8px">Your 3 soonest expiring items.</p>
+      <div id="ss10UseTonight"></div>
+      <button type="button" class="second" id="ss10ViewExpiringBtn" style="margin-top:10px">View all expiring</button>
+    </div>
+  </div>
+</section>
 
   <section class="metrics">
     <button class="metric-card total" id="totalCard"><span class="big-ico">🧺</span><span><span class="label">Total Entries</span><div class="num" id="totalEntries">0</div><div class="view">View all items →</div></span><span class="arrow">›</span></button>
@@ -1422,6 +1453,63 @@ handleBarcode = async function(barcode){
   var modal = document.getElementById("itemModal");
   if (modal && modal.classList.contains("show")) ss7SetAdvanced(false);
 };
+</script>
+
+
+<script>
+/* Calmer home screen (ss10). Default calm, everything else behind Show everything. */
+function ss10GetHomeMode(){ try{ return localStorage.getItem("stocksmart_v10_home_mode") || "calm"; }catch(e){ return "calm"; } }
+function ss10ApplyHomeMode(){
+  var mode = ss10GetHomeMode();
+  var calm = mode !== "full";
+  document.body.classList.toggle("ss10-calm", calm);
+  var btn = document.getElementById("ss10HomeModeBtn");
+  if (btn) btn.textContent = calm ? "Show everything" : "Calm view";
+}
+function ss10SetHomeMode(mode){
+  try{ localStorage.setItem("stocksmart_v10_home_mode", mode); }catch(e){}
+  ss10ApplyHomeMode();
+  if (typeof render === "function") { /* render wrapper below will re-render Use Tonight; avoid recursion by calling original */ }
+  ss10RenderUseTonight();
+}
+function ss10UseStatus(d){
+  if (d < 0) return "Expired " + Math.abs(d) + "d ago";
+  if (d === 0) return "Today";
+  if (d === 1) return "Tomorrow";
+  return "In " + d + " days";
+}
+function ss10RenderUseTonight(){
+  var el = document.getElementById("ss10UseTonight");
+  if (!el) return;
+  var countEl = document.getElementById("ss10ShoppingCount");
+  if (countEl && typeof shoppingList !== "undefined") countEl.textContent = shoppingList.length + " items";
+  if (typeof items === "undefined" || !items.length) { el.innerHTML = "<p style=\"color:var(--muted)\">No items yet.</p>"; return; }
+  var dated = items.filter(function(i){ return i.expDate; });
+  var upcoming = dated.filter(function(i){ return daysUntil(i.expDate) >= 0; }).slice().sort(function(a,b){ return daysUntil(a.expDate) - daysUntil(b.expDate); });
+  var soon = upcoming.length ? upcoming.slice(0,3) : dated.slice().sort(function(a,b){ return daysUntil(b.expDate) - daysUntil(a.expDate); }).slice(0,3);
+  if (!soon.length) { el.innerHTML = "<p style=\"color:var(--muted)\">No items with expiration dates yet. Add an expiration when you add an item.</p>"; return; }
+  el.innerHTML = soon.map(function(i){
+    var d = daysUntil(i.expDate);
+    var name = String(i.name || "").replace(/&/g,"&amp;").replace(/</g,"&lt;");
+    return "<div class=\"ss10-use-row\"><div class=\"ss10-use-name\" onclick=\"editItem(" + i.id + ")\" style=\"cursor:pointer\">" + name + "<div class=\"ss10-use-meta\">" + (i.quantity || 0) + " " + (i.unit || "Each") + " · " + (i.location || "") + " · " + ss10UseStatus(d) + "</div></div><button type=\"button\" class=\"second\" onclick=\"ss10UseOne(" + i.id + ")\">Use 1</button></div>";
+  }).join("");
+}
+function ss10UseOne(id){
+  var item = items.find(function(i){ return i.id === id; });
+  if (!item) return;
+  if (item.quantity > 1) { item.quantity = item.quantity - 1; }
+  else { if (!confirm("Use up " + (item.name || "this item") + "?")) return; items = items.filter(function(i){ return i.id !== id; }); }
+  saveAll(); render();
+}
+var ss10ScanBtn = document.getElementById("ss10ScanBtn"); if (ss10ScanBtn) ss10ScanBtn.onclick = function(){ openScanner("add"); };
+var ss10ShopBtn = document.getElementById("ss10ShoppingBtn"); if (ss10ShopBtn) ss10ShopBtn.onclick = function(){ showShopping(); };
+var ss10ModeBtn = document.getElementById("ss10HomeModeBtn"); if (ss10ModeBtn) ss10ModeBtn.onclick = function(){ ss10SetHomeMode(ss10GetHomeMode() === "full" ? "calm" : "full"); };
+var ss10ExpBtn = document.getElementById("ss10ViewExpiringBtn"); if (ss10ExpBtn) ss10ExpBtn.onclick = function(){ ss10SetHomeMode("full"); showInventory("expiring"); };
+if (typeof render === "function") {
+  var ss10OrigRender = render;
+  render = function(){ ss10OrigRender(); ss10RenderUseTonight(); ss10ApplyHomeMode(); };
+}
+ss10ApplyHomeMode(); ss10RenderUseTonight();
 </script>
 
 </body>
