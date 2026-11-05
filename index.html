@@ -358,6 +358,23 @@ input:focus, select:focus{ border-color:var(--ss-accent); box-shadow:0 0 0 3px r
 .ss11-bottomnav .ss11-scan{ background:transparent; color:#9A9DA2; width:auto; height:auto; border-radius:0; box-shadow:none; font-size:12px; font-weight:600; margin:0; }
 .ss11-bottomnav .ss11-scan.active{ color:var(--ss-accent-strong); font-weight:700; }
 .ss13-appinfo{ border-top:1px solid #E8E6E1; margin-top:14px; padding-top:12px; color:#9A9DA2; font-size:12px; line-height:1.6; }
+
+/* Clean Inventory tab (ss14): hide metrics and sidebar, chip filters, fewer fields, bulk bar only when selecting. */
+body.ss14-inventory .metrics{ display:none; }
+body.ss14-inventory .side-stack{ display:none; }
+body.ss14-inventory .location-filter .section-title{ display:none; }
+body.ss14-inventory .loc-btn{ min-height:32px; padding:6px 11px; border-radius:999px; font-size:12px; box-shadow:none; border-color:#E8E6E1; }
+body.ss14-inventory .search{ margin:0; width:100%; max-width:none; height:40px; border-radius:999px; }
+body.ss14-inventory .table-head{ padding:12px; }
+body.ss14-inventory #listTitle{ font-size:18px; }
+body.ss14-inventory .controls-inline select{ height:36px; font-size:13px; }
+body.ss14-inventory .table-panel{ box-shadow:none; }
+body.ss14-inventory .bulk-bar{ display:none; }
+body.ss14-inventory .bulk-bar.ss14-show{ display:flex; }
+body.ss14-inventory .table th:nth-child(3), body.ss14-inventory .table th:nth-child(7), body.ss14-inventory .table th:nth-child(8){ display:none; }
+body.ss14-inventory .table td.field-cell[data-label="Category"], body.ss14-inventory .table td.field-cell[data-label="Status"], body.ss14-inventory .table td.field-cell[data-label="Added"]{ display:none; }
+body.ss14-inventory .table td.item-cell .tag-badge{ display:none; }
+body.ss14-inventory .table tr{ box-shadow:0 2px 8px rgba(80,80,80,.04); }
 </style>
 </head>
 <body data-ss-theme="dusty">
@@ -1656,5 +1673,33 @@ ss10ApplyHomeMode(); ss10RenderUseTonight();
 })();
 </script>
 
+<script>
+/* Clean Inventory tab (ss14). */
+(function(){
+  function ss14SetInventory(on){ document.body.classList.toggle("ss14-inventory", !!on); }
+  if (typeof showInventory === "function") {
+    var ss14OrigShowInventory = showInventory;
+    showInventory = function(filter){ ss14SetInventory(true); return ss14OrigShowInventory(filter); };
+  }
+  if (typeof showShopping === "function") {
+    var ss14OrigShowShopping = showShopping;
+    showShopping = function(){ ss14SetInventory(false); return ss14OrigShowShopping(); };
+  }
+  var ss14Home = document.getElementById("ss11NavHome");
+  if (ss14Home) { var ss14HomeOrig = ss14Home.onclick; ss14Home.onclick = function(){ ss14SetInventory(false); if (ss14HomeOrig) ss14HomeOrig(); }; }
+  if (typeof render === "function") {
+    var ss14OrigRender = render;
+    render = function(){
+      ss14OrigRender();
+      var bulk = document.getElementById("bulkBar");
+      if (bulk) {
+        var hasSel = (typeof selectedIds !== "undefined" && selectedIds && selectedIds.size > 0);
+        bulk.classList.toggle("ss14-show", !!hasSel);
+        if (!hasSel) bulk.classList.remove("show");
+      }
+    };
+  }
+})();
+</script>
 </body>
 </html>
