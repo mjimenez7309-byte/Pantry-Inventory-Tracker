@@ -340,6 +340,13 @@ input:focus, select:focus{ border-color:var(--ss-accent); box-shadow:0 0 0 3px r
   #ss10UseTonight{ grid-template-columns:1fr 1fr; }
   .metrics{ grid-template-columns:repeat(2,1fr); }
 }
+
+/* Fix (ss12): floating bottom tabs, footer pinned above tabs, Add offers typing or scan. */
+.app-shell{ display:flex; flex-direction:column; min-height:100dvh; padding-bottom:130px; }
+.footer{ margin-top:auto; padding-top:18px; text-align:center; }
+.ss11-bottomnav{ left:50%; transform:translateX(-50%); width:calc(100% - 24px); max-width:796px; bottom:calc(12px + env(safe-area-inset-bottom)); border:1px solid #E8E6E1; border-radius:28px; box-shadow:0 12px 30px rgba(80,80,80,.18); padding:10px 6px; }
+.ss11-bottomnav .ss11-scan{ box-shadow:0 6px 16px rgba(80,80,80,.20); }
+.modal-head{ background:var(--ss-accent-strong); }
 </style>
 </head>
 <body data-ss-theme="dusty">
@@ -464,6 +471,9 @@ input:focus, select:focus{ border-color:var(--ss-accent); box-shadow:0 0 0 3px r
   <button type="button" id="ss11NavShopping">Shopping <span id="ss11ShoppingCount"></span></button>
   <button type="button" id="ss11NavMenu">Menu</button>
 </nav>
+
+
+<div class="modal" id="ss11AddChoiceModal"><div class="modal-box" style="max-width:420px"><div class="modal-head"><h3>Add item</h3><button class="secondary" id="ss11AddChoiceClose" type="button">Close</button></div><div class="modal-body"><p style="margin-top:0;color:#9A9DA2">How do you want to add it?</p><div style="display:grid;gap:10px"><button class="primary" id="ss11AddTextBtn" type="button">Add by typing</button><button class="secondary" id="ss11AddScanBtn" type="button">Scan a barcode</button></div></div></div></div>
 
 <div class="modal" id="menuModal"><div class="modal-box menu-modal-box"><div class="modal-head"><h3>☰ StockSmart Menu</h3><button class="secondary" id="closeMenuModal">Close</button></div><div class="modal-body">
   
@@ -1617,6 +1627,12 @@ ss10ApplyHomeMode(); ss10RenderUseTonight();
     var origRender = render;
     render = function(){ origRender(); updateShoppingCount(); };
   }
+  function ss12OpenAddChoice(){ if (typeof closeAppMenu === "function") closeAppMenu(); if (typeof openModal === "function") openModal("ss11AddChoiceModal"); }
+  var ss12AddBtn = document.getElementById("addBtn"); if (ss12AddBtn) ss12AddBtn.onclick = ss12OpenAddChoice;
+  var ss12AddMenuBtn = document.getElementById("addMenuBtn"); if (ss12AddMenuBtn) ss12AddMenuBtn.onclick = ss12OpenAddChoice;
+  var ss12Close = document.getElementById("ss11AddChoiceClose"); if (ss12Close) ss12Close.onclick = function(){ closeModal("ss11AddChoiceModal"); };
+  var ss12Text = document.getElementById("ss11AddTextBtn"); if (ss12Text) ss12Text.onclick = function(){ closeModal("ss11AddChoiceModal"); if (typeof openAdd === "function") openAdd(); };
+  var ss12Scan = document.getElementById("ss11AddScanBtn"); if (ss12Scan) ss12Scan.onclick = function(){ closeModal("ss11AddChoiceModal"); if (typeof openScanner === "function") openScanner("add"); };
   applyTheme(getTheme());
   updateShoppingCount();
 })();
