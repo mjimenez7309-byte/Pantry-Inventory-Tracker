@@ -296,9 +296,53 @@ body.ss10-calm #ss10CalmBody{display:block}
 .ss10-use-row:first-of-type{border-top:none}
 .ss10-use-name{font-weight:800;flex:1;min-width:0}
 .ss10-use-meta{color:var(--muted);font-size:13px}
+
+/* Bottom tab redesign (ss11): softer muted neutrals, no teal, switchable accent. */
+body{ background:#F7F6F3; color:#44484D; }
+body[data-ss-theme="dusty"]{ --ss-accent:#A9BCCB; --ss-accent-strong:#6B8397; --ss-accent-ink:#33414E; }
+body[data-ss-theme="sage"]{ --ss-accent:#B9C4AD; --ss-accent-strong:#7A8A6E; --ss-accent-ink:#3A4532; }
+body[data-ss-theme="rose"]{ --ss-accent:#DCC2C7; --ss-accent-strong:#967078; --ss-accent-ink:#5A3D44; }
+body[data-ss-theme="lavender"]{ --ss-accent:#C6BBD3; --ss-accent-strong:#7E7390; --ss-accent-ink:#3E364A; }
+body[data-ss-theme="sand"]{ --ss-accent:#D4B483; --ss-accent-strong:#9A7B4F; --ss-accent-ink:#3A2E1F; }
+.app-shell{ max-width:820px; margin:0 auto; padding:18px 16px 110px; }
+.topbar{ grid-template-columns:1fr auto; gap:12px; margin-bottom:14px; }
+.brand img{ width:48px; height:48px; border-radius:14px; box-shadow:none; }
+.brand h1{ font-size:28px; letter-spacing:-.5px; color:#44484D; }
+.brand h1 span{ color:#44484D; }
+.tagline{ display:none; }
+.pills{ margin-top:6px; }
+.pill{ font-size:12px; padding:5px 10px; box-shadow:none; background:#fff; border-color:#E8E6E1; }
+.top-actions{ grid-template-columns:1fr; }
+.top-actions .action-tile{ min-height:48px; flex-direction:row; border-radius:999px; background:var(--ss-accent); color:var(--ss-accent-ink); border-color:transparent; box-shadow:none; font-size:15px; }
+.top-actions .action-tile .ico{ font-size:18px; }
+#scanBtn, #menuBtn{ display:none; }
+.panel{ background:#fff; border-color:#E8E6E1; box-shadow:0 2px 10px rgba(80,80,80,.04); border-radius:18px; }
+.dashboard{ grid-template-columns:1fr; }
+.metrics{ grid-template-columns:repeat(2,1fr); }
+.metric-card{ background:#fff !important; border-color:#E8E6E1 !important; }
+.primary{ background:var(--ss-accent-strong) !important; border-color:var(--ss-accent-strong) !important; }
+.loc-btn.active{ background:var(--ss-accent-strong); border-color:var(--ss-accent-strong); }
+input:focus, select:focus{ border-color:var(--ss-accent); box-shadow:0 0 0 3px rgba(0,0,0,.05); }
+#ss10UseTonight{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.ss10-use-row{ flex-direction:column; align-items:stretch; gap:8px; padding:12px; border:1px solid #E8E6E1; border-radius:16px; background:#fff; }
+.ss10-use-row .ss10-use-name{ font-size:15px; }
+.ss10-use-row .second{ width:100%; text-align:center; border-radius:999px; }
+.ss11-bottomnav{ position:fixed; left:50%; transform:translateX(-50%); bottom:0; width:100%; max-width:820px; display:grid; grid-template-columns:repeat(5,1fr); align-items:end; gap:2px; background:#fff; border-top:1px solid #E8E6E1; padding:8px 6px calc(8px + env(safe-area-inset-bottom)); z-index:90; }
+.ss11-bottomnav button{ border:none; background:transparent; color:#44484D; font-size:11px; font-weight:700; padding:4px 2px; display:flex; flex-direction:column; align-items:center; gap:2px; }
+.ss11-bottomnav button.active{ color:var(--ss-accent-strong); }
+.ss11-bottomnav .ss11-scan{ background:var(--ss-accent); color:var(--ss-accent-ink); width:52px; height:52px; border-radius:50%; margin:0 auto; font-size:12px; font-weight:800; justify-content:center; }
+.ss11-theme-picker{ border:1px solid #E8E6E1; border-radius:14px; padding:12px; margin-bottom:14px; background:#F7F6F3; }
+.ss11-theme-btns{ display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
+.ss11-theme-btns button{ border:2px solid #E8E6E1; border-radius:999px; padding:8px 12px; font-weight:700; background:#fff; color:#44484D; }
+.ss11-theme-btns button.active{ border-color:#44484D; }
+@media(max-width:700px){
+  .app-shell{ padding:14px 12px 110px; }
+  #ss10UseTonight{ grid-template-columns:1fr 1fr; }
+  .metrics{ grid-template-columns:repeat(2,1fr); }
+}
 </style>
 </head>
-<body>
+<body data-ss-theme="dusty">
 <div class="app-shell"><div id="ss6UpdateBanner"><span>New StockSmart version available.</span><button class="primary" type="button" onclick="ss6ApplyUpdate()">Refresh to update</button></div>
   <header class="topbar">
     <div class="brand">
@@ -332,7 +376,7 @@ body.ss10-calm #ss10CalmBody{display:block}
       <button type="button" class="action-tile ss10-calmtile" id="ss10ShoppingBtn"><span class="ico">🛒</span><span>Shopping List</span><small id="ss10ShoppingCount">0 items</small></button>
     </div>
     <div style="margin-top:16px">
-      <div class="section-title">Use Tonight</div>
+      <div class="section-title">Use First</div>
       <p style="color:var(--muted);margin:4px 0 8px">Your 3 soonest expiring items.</p>
       <div id="ss10UseTonight"></div>
       <button type="button" class="second" id="ss10ViewExpiringBtn" style="margin-top:10px">View all expiring</button>
@@ -412,8 +456,29 @@ body.ss10-calm #ss10CalmBody{display:block}
   <footer class="footer"><div id="lastBackup">📅 Built-in backup: 2026-06-14T15:36:40.394Z</div><div>💚 All changes saved locally</div><div>StockSmart v5.2.7</div></footer>
 </div>
 
+
+<nav class="ss11-bottomnav" aria-label="StockSmart navigation">
+  <button type="button" id="ss11NavHome" class="active">Home</button>
+  <button type="button" id="ss11NavInventory">Inventory</button>
+  <button type="button" id="ss11NavScan" class="ss11-scan">Scan</button>
+  <button type="button" id="ss11NavShopping">Shopping <span id="ss11ShoppingCount"></span></button>
+  <button type="button" id="ss11NavMenu">Menu</button>
+</nav>
+
 <div class="modal" id="menuModal"><div class="modal-box menu-modal-box"><div class="modal-head"><h3>☰ StockSmart Menu</h3><button class="secondary" id="closeMenuModal">Close</button></div><div class="modal-body">
-  <div class="menu-grid">
+  
+<div class="ss11-theme-picker">
+  <div style="font-weight:800">App color</div>
+  <div style="color:#9A9DA2;font-size:13px;margin-top:2px">Pick a softer muted color. It is saved on this device.</div>
+  <div class="ss11-theme-btns" id="ss11ThemeBtns">
+    <button type="button" data-ss-theme="dusty">Dusty blue</button>
+    <button type="button" data-ss-theme="sage">Sage</button>
+    <button type="button" data-ss-theme="rose">Soft rose</button>
+    <button type="button" data-ss-theme="lavender">Lavender</button>
+    <button type="button" data-ss-theme="sand">Warm sand</button>
+  </div>
+</div>
+<div class="menu-grid">
     <button class="menu-tile" id="scanMenuBtn" type="button"><span class="ico">📷</span><span><strong>Scan</strong><small>Add or check an item</small></span></button>
     <button class="menu-tile" id="addMenuBtn" type="button"><span class="ico">➕</span><span><strong>Add Item</strong><small>Enter an item manually</small></span></button>
     <button class="menu-tile" id="shoppingMenuBtn" type="button"><span class="ico">🛒</span><span><strong>Shopping List</strong><small>View or add needed items</small></span></button>
@@ -1510,6 +1575,51 @@ if (typeof render === "function") {
   render = function(){ ss10OrigRender(); ss10RenderUseTonight(); ss10ApplyHomeMode(); };
 }
 ss10ApplyHomeMode(); ss10RenderUseTonight();
+</script>
+
+
+<script>
+/* Bottom tab + color switcher (ss11). Data keys and existing features are unchanged. */
+(function(){
+  var THEME_KEY = "stocksmart_theme_v11";
+  var themes = ["dusty","sage","rose","lavender","sand"];
+  function getTheme(){ try{ var v = localStorage.getItem(THEME_KEY); return themes.indexOf(v) >= 0 ? v : "dusty"; }catch(e){ return "dusty"; } }
+  function applyTheme(theme){
+    document.body.setAttribute("data-ss-theme", theme);
+    document.querySelectorAll("#ss11ThemeBtns button").forEach(function(b){ b.classList.toggle("active", b.getAttribute("data-ss-theme") === theme); });
+    try{ localStorage.setItem(THEME_KEY, theme); }catch(e){}
+  }
+  function setActive(id){
+    document.querySelectorAll(".ss11-bottomnav button").forEach(function(b){ b.classList.toggle("active", b.id === id); });
+  }
+  function scrollToEl(sel){
+    var el = document.querySelector(sel);
+    if (el) el.scrollIntoView({behavior:"smooth", block:"start"});
+  }
+  function updateShoppingCount(){
+    var el = document.getElementById("ss11ShoppingCount");
+    if (el && typeof shoppingList !== "undefined") el.textContent = shoppingList.length ? "(" + shoppingList.length + ")" : "";
+  }
+  document.querySelectorAll("#ss11ThemeBtns button").forEach(function(b){
+    b.onclick = function(){ applyTheme(b.getAttribute("data-ss-theme")); };
+  });
+  var home = document.getElementById("ss11NavHome");
+  if (home) home.onclick = function(){ setActive("ss11NavHome"); if (typeof ss10SetHomeMode === "function") ss10SetHomeMode("calm"); window.scrollTo({top:0, behavior:"smooth"}); };
+  var inv = document.getElementById("ss11NavInventory");
+  if (inv) inv.onclick = function(){ setActive("ss11NavInventory"); if (typeof ss10SetHomeMode === "function") ss10SetHomeMode("full"); if (typeof showInventory === "function") showInventory(); scrollToEl(".table-panel"); };
+  var scan = document.getElementById("ss11NavScan");
+  if (scan) scan.onclick = function(){ setActive("ss11NavScan"); if (typeof openScanner === "function") openScanner("add"); };
+  var shop = document.getElementById("ss11NavShopping");
+  if (shop) shop.onclick = function(){ setActive("ss11NavShopping"); if (typeof ss10SetHomeMode === "function") ss10SetHomeMode("full"); if (typeof showShopping === "function") showShopping(); scrollToEl(".table-panel"); };
+  var menu = document.getElementById("ss11NavMenu");
+  if (menu) menu.onclick = function(){ setActive("ss11NavMenu"); if (typeof openAppMenu === "function") openAppMenu(); };
+  if (typeof render === "function") {
+    var origRender = render;
+    render = function(){ origRender(); updateShoppingCount(); };
+  }
+  applyTheme(getTheme());
+  updateShoppingCount();
+})();
 </script>
 
 </body>
