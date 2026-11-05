@@ -382,6 +382,20 @@ body.ss14-inventory .table tr{ box-shadow:0 2px 8px rgba(80,80,80,.04); }
 .ss15-pb-cheapest{ font-weight:800; color:var(--ss-accent-strong); }
 .ss15-pb-entry{ display:flex; justify-content:space-between; gap:10px; padding:6px 0; border-top:1px solid #EDEBE7; font-size:14px; }
 .ss15-pb-entry:first-of-type{ border-top:none; }
+
+/* Smart shopping checklist (ss16). */
+body.ss16-checklist .table thead{ display:none; }
+body.ss16-checklist .table tr{ display:block; box-shadow:0 2px 8px rgba(80,80,80,.04); }
+body.ss16-checklist .table td.select-cell{ display:none !important; }
+body.ss16-checklist .table td.field-cell[data-label="Category"], body.ss16-checklist .table td.field-cell[data-label="Status"], body.ss16-checklist .table td.field-cell[data-label="Added"]{ display:none; }
+body.ss16-checklist .table td.item-cell{ padding:12px; }
+body.ss16-checklist .table td.item-cell .item-name{ font-size:16px; }
+body.ss16-checklist .table td.actions-cell-wrap{ padding:10px 12px; }
+body.ss16-checklist .actions-cell .icon-btn{ height:44px; font-size:14px; }
+.ss16-sugg-row{ display:flex; justify-content:space-between; gap:10px; padding:10px 0; border-top:1px solid #EDEBE7; }
+.ss16-sugg-row:first-of-type{ border-top:none; }
+.ss16-sugg-reason{ color:#9A9DA2; font-size:13px; }
+.ss16-sugg-cheap{ color:var(--ss-accent-strong); font-size:13px; font-weight:700; }
 </style>
 </head>
 <body data-ss-theme="dusty">
@@ -525,6 +539,13 @@ body.ss14-inventory .table tr{ box-shadow:0 2px 8px rgba(80,80,80,.04); }
   <div id="ss15PbList" style="margin-top:12px"></div>
 </div></div></div>
 
+
+<div class="modal" id="ss16SuggestModal"><div class="modal-box"><div class="modal-head"><h3>You may need</h3><button class="secondary" id="ss16CloseSuggest" type="button">Close</button></div><div class="modal-body">
+  <p style="margin-top:0;color:#9A9DA2">Based on running low, expiring soon, and what you have bought before. Nothing is added until you tap it.</p>
+  <div id="ss16SuggestList"></div>
+  <div class="modal-actions"><button class="primary" id="ss16AddAll" type="button">Add all suggestions</button></div>
+</div></div></div>
+
 <div class="modal" id="menuModal"><div class="modal-box menu-modal-box"><div class="modal-head"><h3>☰ StockSmart Menu</h3><button class="secondary" id="closeMenuModal">Close</button></div><div class="modal-body">
   
 <div class="ss11-theme-picker">
@@ -558,6 +579,7 @@ body.ss14-inventory .table tr{ box-shadow:0 2px 8px rgba(80,80,80,.04); }
     <button class="menu-tile" id="ss6PlannerBtn" type="button"><span class="ico">📅</span><span><strong>Meal Planner</strong><small>Seven-day plan</small></span></button>
     <button class="menu-tile" id="ss6SettingsBtn" type="button"><span class="ico">⚙️</span><span><strong>Settings</strong><small>Expiring soon, batches, trash</small></span></button>
     <button class="menu-tile" id="ss15PriceBookBtn" type="button"><span class="ico">💲</span><span><strong>Price Book</strong><small>Cheapest store by item</small></span></button>
+    <button class="menu-tile" id="ss16SmartBtn" type="button"><span class="ico">💡</span><span><strong>Smart shopping</strong><small>You may need, one tap to add</small></span></button>
     <button class="menu-tile" id="dealsMenuBtn" type="button"><span class="ico">📰</span><span><strong>Deals</strong><small>Weekly circulars</small></span></button>
     <button class="menu-tile" id="familySyncMenuBtn" type="button"><span class="ico">👥</span><span><strong>Family Sync</strong><small>Manual backup/restore</small></span></button>
     <button class="menu-tile" id="installHelpMenuBtn" type="button"><span class="ico">📱</span><span><strong>Install Help</strong><small>Phone or desktop app</small></span></button>
@@ -1805,6 +1827,128 @@ if (ss15Add) ss15Add.onclick = function(){
   document.getElementById("ss15PbSize").value = "";
   ss15RenderPriceBook();
 };
+</script>
+
+
+<script>
+/* Smart suggestions and shopping checklist (ss16). Computed only, no new data key. */
+function ss16Norm(s){ return String(s || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim(); }
+function ss16Esc(s){ return String(s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;"); }
+function ss16DaysAgo(iso){
+  try{ var d = new Date(iso); if (isNaN(d)) return 9999; return Math.floor((Date.now() - d.getTime()) / 86400000); }catch(e){ return 9999; }
+}
+function ss16GetSuggestions(){
+  var out = [];
+  var seen = {};
+  var onList = {};
+  if (typeof shoppingList !== "undefined") shoppingList.forEach(function(s){ if (!s.completed) onList[ss16Norm(s.name)] = true; });
+  function push(name, reason, category, location){
+    var k = ss16Norm(name);
+    if (!k || seen[k] || onList[k]) return;
+    seen[k] = true;
+    out.push({name: name, reason: reason, category: category || "Other", location: location || ""});
+  }
+  if (typeof items !== "undefined") {
+    items.forEach(function(i){
+      if (Number(i.quantity || 0) <= 1) push(i.name, "Running low", i.category, i.location);
+    });
+    items.forEach(function(i){
+      if (i.expDate && typeof daysUntil === "function") {
+        var d = daysUntil(i.expDate);
+        if (d >= 0 && d <= 7) push(i.name, "Expiring soon, get a replacement", i.category, i.location);
+      }
+    });
+  }
+  var hist = (typeof window !== "undefined" && window.ss6History) ? window.ss6History : [];
+  if (!hist.length && typeof ss6History !== "undefined") hist = ss6History;
+  var groups = {};
+  hist.forEach(function(h){
+    var k = ss16Norm(h.name);
+    if (!k) return;
+    if (!groups[k]) groups[k] = {name: h.name, count: 0, last: h.at};
+    groups[k].count += 1;
+    if (h.at && (!groups[k].last || h.at > groups[k].last)) groups[k].last = h.at;
+  });
+  Object.keys(groups).forEach(function(k){
+    var g = groups[k];
+    var days = ss16DaysAgo(g.last);
+    var inv = (typeof items !== "undefined") ? items.find(function(i){ return ss16Norm(i.name) === k; }) : null;
+    if (g.count >= 2 && days >= 14 && (!inv || Number(inv.quantity || 0) <= 1)) {
+      push(g.name, "Bought often, not bought in " + days + " days (" + g.count + " times before)", inv ? inv.category : "Other", inv ? inv.location : "");
+    }
+  });
+  return out.slice(0, 20);
+}
+function ss16Cheapest(name){
+  var book = (typeof window !== "undefined" && window.ss15PriceBook) ? window.ss15PriceBook : [];
+  var matches = book.filter(function(e){ return ss16Norm(e.name) === ss16Norm(name); }).sort(function(a,b){ return Number(a.price) - Number(b.price); });
+  return matches.length ? matches[0] : null;
+}
+function ss16AddSuggestion(name, category, location, reason){
+  if (typeof shoppingList === "undefined") return;
+  var k = ss16Norm(name);
+  if (shoppingList.some(function(s){ return !s.completed && ss16Norm(s.name) === k; })) return;
+  shoppingList.unshift({id: "s" + Date.now() + "-" + Math.random().toString(16).slice(2), name: name, category: category || "Other", location: location || "", quantity: 1, expDate: "", notes: "Suggested: " + (reason || ""), addedAt: new Date().toISOString(), completed: false});
+  if (typeof saveAll === "function") saveAll();
+  if (typeof render === "function") render();
+}
+window.ss16AddSuggestion = ss16AddSuggestion;
+function ss16RenderSuggestions(){
+  var el = document.getElementById("ss16SuggestList");
+  if (!el) return;
+  var sug = ss16GetSuggestions();
+  window.ss16CurrentSuggestions = sug;
+  if (!sug.length) { el.innerHTML = "<p style=\"color:#9A9DA2\">Nothing to suggest right now. Running low items, expiring soon items, and things you have bought often will show up here.</p>"; return; }
+  el.innerHTML = sug.map(function(s, idx){
+    var cheap = ss16Cheapest(s.name);
+    var cheapHtml = cheap ? "<div class=\"ss16-sugg-cheap\">Cheapest known: $" + Number(cheap.price).toFixed(2) + " at " + ss16Esc(cheap.store) + "</div>" : "";
+    return "<div class=\"ss16-sugg-row\"><div><div style=\"font-weight:800\">" + ss16Esc(s.name) + "</div><div class=\"ss16-sugg-reason\">" + ss16Esc(s.reason) + "</div>" + cheapHtml + "</div><button class=\"secondary\" type=\"button\" onclick=\"ss16AddSuggestionFromList(" + idx + ")\">Add</button></div>";
+  }).join("");
+}
+function ss16AddSuggestionFromList(idx){
+  var sug = window.ss16CurrentSuggestions || [];
+  var s = sug[idx];
+  if (!s) return;
+  ss16AddSuggestion(s.name, s.category, s.location, s.reason);
+  ss16RenderSuggestions();
+}
+window.ss16AddSuggestionFromList = ss16AddSuggestionFromList;
+function ss16ShowSuggestions(){
+  ss16RenderSuggestions();
+  if (typeof openModal === "function") openModal("ss16SuggestModal");
+}
+var ss16Btn = document.getElementById("ss16SmartBtn");
+if (ss16Btn) ss16Btn.onclick = function(){ if (typeof runFromMenu === "function") runFromMenu(ss16ShowSuggestions); else ss16ShowSuggestions(); };
+var ss16Close = document.getElementById("ss16CloseSuggest");
+if (ss16Close) ss16Close.onclick = function(){ closeModal("ss16SuggestModal"); };
+var ss16AddAll = document.getElementById("ss16AddAll");
+if (ss16AddAll) ss16AddAll.onclick = function(){
+  var sug = ss16GetSuggestions();
+  sug.forEach(function(s){ ss16AddSuggestion(s.name, s.category, s.location, s.reason); });
+  ss16RenderSuggestions();
+};
+function ss16EnsureSuggestBtn(){
+  if (document.getElementById("ss16SuggestBtn")) return;
+  var anchor = document.getElementById("addShoppingBtn");
+  if (!anchor || !anchor.parentNode) return;
+  var b = document.createElement("button");
+  b.className = "secondary"; b.type = "button"; b.id = "ss16SuggestBtn"; b.textContent = "Suggestions";
+  b.onclick = ss16ShowSuggestions;
+  anchor.parentNode.insertBefore(b, anchor.nextSibling);
+}
+var ss16HomeBtn = document.getElementById("ss11NavHome");
+if (ss16HomeBtn) { var ss16HomeOrig = ss16HomeBtn.onclick; ss16HomeBtn.onclick = function(){ document.body.classList.remove("ss16-checklist"); if (ss16HomeOrig) ss16HomeOrig(); }; }
+if (typeof render === "function") {
+  var ss16OrigRender = render;
+  render = function(){
+    ss16OrigRender();
+    try {
+      var isShopping = (typeof state !== "undefined" && state && state.mode === "shopping");
+      document.body.classList.toggle("ss16-checklist", !!isShopping);
+      if (isShopping) ss16EnsureSuggestBtn();
+    } catch(e) {}
+  };
+}
 </script>
 
 </body>
