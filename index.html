@@ -396,6 +396,13 @@ body.ss16-checklist .actions-cell .icon-btn{ height:44px; font-size:14px; }
 .ss16-sugg-row:first-of-type{ border-top:none; }
 .ss16-sugg-reason{ color:#9A9DA2; font-size:13px; }
 .ss16-sugg-cheap{ color:var(--ss-accent-strong); font-size:13px; font-weight:700; }
+
+/* Receipt scan (ss17). */
+.ss17-rec-row{ display:grid; grid-template-columns:22px 1fr 90px; gap:8px; align-items:center; padding:8px 0; border-top:1px solid #EDEBE7; }
+.ss17-rec-row:first-of-type{ border-top:none; }
+.ss17-rec-row input[type="text"]{ width:100%; height:36px; }
+.ss17-rec-row input[type="number"]{ width:100%; height:36px; }
+.ss17-receipt-card{ border:1px solid #E8E6E1; border-radius:14px; padding:12px; margin-bottom:10px; background:#fff; }
 </style>
 </head>
 <body data-ss-theme="dusty">
@@ -546,6 +553,27 @@ body.ss16-checklist .actions-cell .icon-btn{ height:44px; font-size:14px; }
   <div class="modal-actions"><button class="primary" id="ss16AddAll" type="button">Add all suggestions</button></div>
 </div></div></div>
 
+
+<div class="modal" id="ss17ReceiptModal"><div class="modal-box"><div class="modal-head"><h3>Scan receipt</h3><button class="secondary" id="ss17CloseReceipt" type="button">Close</button></div><div class="modal-body">
+  <p style="margin-top:0;color:#9A9DA2">Take a photo of a receipt, or pick one. The app reads it on your phone, nothing is uploaded. Review every line before you save, because receipts abbreviate names and can misread.</p>
+  <div class="form-grid">
+    <label class="full">Receipt photo<input id="ss17ReceiptFile" type="file" accept="image/*"></label>
+    <label>Store<input id="ss17ReceiptStore" placeholder="e.g. ShopRite"></label>
+    <label>Date<input id="ss17ReceiptDate" type="date"></label>
+  </div>
+  <img id="ss17ReceiptPreview" style="display:none;max-width:100%;margin-top:12px;border-radius:12px;border:1px solid #E8E6E1">
+  <div id="ss17Status" style="margin-top:10px;color:#9A9DA2;font-weight:700"></div>
+  <div class="modal-actions"><button class="primary" id="ss17ReadBtn" type="button" disabled>Read receipt</button></div>
+  <div id="ss17ParsedList" style="margin-top:12px"></div>
+  <div id="ss17ParsedActions" style="display:none;margin-top:12px;gap:10px;flex-wrap:wrap">
+    <button class="primary" id="ss17AddPricesBtn" type="button">Add checked prices to Price Book</button>
+    <button class="secondary" id="ss17AddInventoryBtn" type="button">Add checked items to inventory</button>
+    <button class="secondary" id="ss17SaveReceiptBtn" type="button">Save receipt record</button>
+  </div>
+  <div id="ss17Missed" style="margin-top:16px"></div>
+  <div id="ss17History" style="margin-top:16px"></div>
+</div></div></div>
+
 <div class="modal" id="menuModal"><div class="modal-box menu-modal-box"><div class="modal-head"><h3>☰ StockSmart Menu</h3><button class="secondary" id="closeMenuModal">Close</button></div><div class="modal-body">
   
 <div class="ss11-theme-picker">
@@ -580,6 +608,7 @@ body.ss16-checklist .actions-cell .icon-btn{ height:44px; font-size:14px; }
     <button class="menu-tile" id="ss6SettingsBtn" type="button"><span class="ico">⚙️</span><span><strong>Settings</strong><small>Expiring soon, batches, trash</small></span></button>
     <button class="menu-tile" id="ss15PriceBookBtn" type="button"><span class="ico">💲</span><span><strong>Price Book</strong><small>Cheapest store by item</small></span></button>
     <button class="menu-tile" id="ss16SmartBtn" type="button"><span class="ico">💡</span><span><strong>Smart shopping</strong><small>You may need, one tap to add</small></span></button>
+    <button class="menu-tile" id="ss17ReceiptBtn" type="button"><span class="ico">🧾</span><span><strong>Scan receipt</strong><small>Prices to Price Book, backup check</small></span></button>
     <button class="menu-tile" id="dealsMenuBtn" type="button"><span class="ico">📰</span><span><strong>Deals</strong><small>Weekly circulars</small></span></button>
     <button class="menu-tile" id="familySyncMenuBtn" type="button"><span class="ico">👥</span><span><strong>Family Sync</strong><small>Manual backup/restore</small></span></button>
     <button class="menu-tile" id="installHelpMenuBtn" type="button"><span class="ico">📱</span><span><strong>Install Help</strong><small>Phone or desktop app</small></span></button>
@@ -944,7 +973,7 @@ function toggleShopping(id) { shoppingList=shoppingList.map(i=>String(i.id)===St
 function clearShoppingForm() { shopName.value=""; shopCategory.value="Other"; shopLocation.value="Pantry"; shopQty.value=1; setDateValue(shopExp,""); shopNotes.value=""; }
 function openShoppingAdd() { clearShoppingForm(); openModal("shoppingModal"); }
 function saveShoppingItem() { const name=shopName.value.trim(); if(!name) return alert("Please enter an item name."); shoppingList.unshift({id:"s"+Date.now()+"-manual",name,category:shopCategory.value||"Other",location:shopLocation.value||"",quantity:Number(shopQty.value||1),expDate:shopExp.value||"",notes:shopNotes.value.trim(),addedAt:new Date().toISOString(),completed:false}); closeModal("shoppingModal"); showShopping(); }
-function backup() { const data={formatVersion:"stocksmart-v6",appVersion:"6.0.0",createdAt:new Date().toISOString(),items,nextId,shoppingList,mealFavorites:mealFavorites(),history:window.ss6History||[],sessions:window.ss6Sessions||[],recipes:window.ss6Recipes||[],planner:window.ss6Planner||{},settings:window.ss6Settings||{expiringDays:14},corrections:window.ss6Corrections||{},trash:window.ss6Trash||[],pricebook:window.ss15PriceBook||[]}; const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"}); const url=URL.createObjectURL(blob); const a=document.createElement("a"); a.href=url; a.download="stocksmart-backup.json"; a.click(); URL.revokeObjectURL(url); }
+function backup() { const data={formatVersion:"stocksmart-v6",appVersion:"6.0.0",createdAt:new Date().toISOString(),items,nextId,shoppingList,mealFavorites:mealFavorites(),history:window.ss6History||[],sessions:window.ss6Sessions||[],recipes:window.ss6Recipes||[],planner:window.ss6Planner||{},settings:window.ss6Settings||{expiringDays:14},corrections:window.ss6Corrections||{},trash:window.ss6Trash||[],pricebook:window.ss15PriceBook||[],receipts:window.ss17Receipts||[]}; const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"}); const url=URL.createObjectURL(blob); const a=document.createElement("a"); a.href=url; a.download="stocksmart-backup.json"; a.click(); URL.revokeObjectURL(url); }
 function restoreFile(file) { if(!file)return; const reader=new FileReader(); reader.onload=e=>{try{const data=JSON.parse(e.target.result); const imported=Array.isArray(data)?data:data.items; if(!Array.isArray(imported))throw new Error("No inventory array in backup."); if(!confirm("Replace your current inventory and shopping list with this backup? Choose Cancel to keep your current data."))return; items=normalizeItems(imported); shoppingList=Array.isArray(data.shoppingList)?data.shoppingList:[]; nextId=data.nextId||Math.max(0,...items.map(i=>Number(i.id)||0))+1; if(data.formatVersion==="stocksmart-v6" && window.ss6ApplyBackup){ window.ss6ApplyBackup(data); } render(); alert("Backup restored.");}catch(err){alert("Could not read that backup file. " + (err && err.message ? err.message : ""));}}; reader.readAsText(file); }
 function recover() { if(!confirm("Reload the current backup inventory built into this app?"))return; items=normalizeItems(DEFAULT_ITEMS); shoppingList=DEFAULT_SHOPPING||[]; nextId=Math.max(0,...items.map(i=>Number(i.id)||0))+1; showInventory(); }
 function useFirst() { showInventory("expiring"); }
@@ -1088,6 +1117,7 @@ function ss6ApplyBackup(data){
   if (data.corrections && typeof data.corrections === "object") ss6Corrections = data.corrections;
   if (Array.isArray(data.trash)) ss6Trash = data.trash;
   if (Array.isArray(data.pricebook) && window.ss15SetPriceBook) window.ss15SetPriceBook(data.pricebook);
+  if (Array.isArray(data.receipts) && window.ss17SetReceipts) window.ss17SetReceipts(data.receipts);
   ss6ActiveSessionId = null;
   ss6SaveAll();
 }
@@ -1949,6 +1979,190 @@ if (typeof render === "function") {
     } catch(e) {}
   };
 }
+</script>
+
+
+<script>
+/* Receipt scan (ss17). On-device OCR, review before saving, fills Price Book. */
+var ss17Receipts = [];
+try { ss17Receipts = JSON.parse(localStorage.getItem("stocksmart_v11_receipts") || "null") || []; } catch(e) { ss17Receipts = []; }
+if (!Array.isArray(ss17Receipts)) ss17Receipts = [];
+window.ss17Receipts = ss17Receipts;
+function ss17SaveReceipts(){ try{ localStorage.setItem("stocksmart_v11_receipts", JSON.stringify(ss17Receipts)); }catch(e){} window.ss17Receipts = ss17Receipts; }
+function ss17SetReceipts(arr){ ss17Receipts = Array.isArray(arr) ? arr : []; ss17SaveReceipts(); ss17RenderHistory(); }
+window.ss17SetReceipts = ss17SetReceipts;
+function ss17Norm(s){ return String(s || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim(); }
+function ss17Esc(s){ return String(s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;"); }
+var ss17Parsed = [];
+var ss17ImageDataUrl = "";
+function ss17ParseReceiptText(text){
+  var lines = String(text || "").split(/\r?\n/);
+  var out = [];
+  var skipWords = ["subtotal", "total", "tax", "balance", "change", "cash", "card", "visa", "mastercard", "amex", "thank you", "receipt", "items sold"];
+  lines.forEach(function(raw){
+    var line = String(raw || "").trim();
+    if (!line) return;
+    var lower = line.toLowerCase();
+    if (skipWords.some(function(w){ return lower.indexOf(w) >= 0 && !/total/i.test(line) ? true : (lower.indexOf("total") >= 0 && line.match(/\d+\.\d{2}\s*$/)); })) {
+      // fall through to total check below; keep simple: skip lines that are clearly totals
+      if (lower.indexOf("subtotal") >= 0 || lower.indexOf("tax") >= 0 || lower.indexOf("balance") >= 0 || lower.indexOf("change due") >= 0) return;
+    }
+    if (/^(total|subtotal|tax|balance|change)\b/i.test(line)) return;
+    var m = line.match(/\$?\s*(\d+\.\d{2})\s*$/);
+    if (!m) return;
+    var price = Number(m[1]);
+    if (!price || price <= 0) return;
+    var name = line.slice(0, m.index).trim().replace(/^\d+\s+/, "").replace(/^[*#\s]+/, "").replace(/\s+$/, "");
+    if (name.length < 2) return;
+    if (/^(total|subtotal|tax)$/i.test(name)) return;
+    out.push({name: name, price: price, checked: true});
+  });
+  return out;
+}
+window.ss17ParseReceiptText = ss17ParseReceiptText;
+function ss17RenderParsed(){
+  var el = document.getElementById("ss17ParsedList");
+  var actions = document.getElementById("ss17ParsedActions");
+  if (!el) return;
+  if (!ss17Parsed.length) { el.innerHTML = ""; if (actions) actions.style.display = "none"; return; }
+  el.innerHTML = "<div style=\"font-weight:800;margin-bottom:6px\">Review lines, fix names or prices, uncheck anything wrong:</div>" + ss17Parsed.map(function(item, idx){
+    return "<div class=\"ss17-rec-row\"><input type=\"checkbox\" " + (item.checked ? "checked" : "") + " onchange=\"ss17ToggleParsed(" + idx + ", this.checked)\"><input type=\"text\" value=\"" + ss17Esc(item.name) + "\" onchange=\"ss17EditParsedName(" + idx + ", this.value)\"><input type=\"number\" step=\"0.01\" min=\"0\" value=\"" + Number(item.price).toFixed(2) + "\" onchange=\"ss17EditParsedPrice(" + idx + ", this.value)\"></div>";
+  }).join("");
+  if (actions) actions.style.display = "flex";
+}
+function ss17ToggleParsed(idx, v){ if (ss17Parsed[idx]) ss17Parsed[idx].checked = !!v; }
+function ss17EditParsedName(idx, v){ if (ss17Parsed[idx]) ss17Parsed[idx].name = v; }
+function ss17EditParsedPrice(idx, v){ if (ss17Parsed[idx]) ss17Parsed[idx].price = Number(v) || 0; }
+window.ss17ToggleParsed = ss17ToggleParsed; window.ss17EditParsedName = ss17EditParsedName; window.ss17EditParsedPrice = ss17EditParsedPrice;
+function ss17CheckedParsed(){ return ss17Parsed.filter(function(i){ return i.checked && i.name && Number(i.price) > 0; }); }
+function ss17RenderHistory(){
+  var el = document.getElementById("ss17History");
+  if (!el) return;
+  if (!ss17Receipts.length) { el.innerHTML = "<p style=\"color:#9A9DA2\">No saved receipts yet.</p>"; return; }
+  el.innerHTML = "<div style=\"font-weight:800;margin-bottom:6px\">Saved receipts</div>" + ss17Receipts.map(function(r, idx){
+    var total = Number(r.total || 0).toFixed(2);
+    return "<div class=\"ss17-receipt-card\"><div><strong>" + ss17Esc(r.store || "Receipt") + "</strong> · " + ss17Esc(r.date || "") + " · $" + total + " · " + (r.items ? r.items.length : 0) + " items</div><button class=\"secondary\" type=\"button\" style=\"margin-top:8px\" onclick=\"ss17CheckMissed(" + idx + ")\">Check missed items</button></div>";
+  }).join("");
+}
+function ss17CheckMissed(idx){
+  var r = ss17Receipts[idx]; if (!r) return;
+  var missed = [];
+  (r.items || []).forEach(function(it){
+    var k = ss17Norm(it.name);
+    var inv = (typeof items !== "undefined") ? items.find(function(i){ return ss17Norm(i.name) === k; }) : null;
+    if (!inv) missed.push(it);
+  });
+  var el = document.getElementById("ss17Missed");
+  if (!el) return;
+  if (!missed.length) { el.innerHTML = "<p style=\"color:#9A9DA2\">Nothing missed from this receipt, every item is already in inventory.</p>"; return; }
+  el.innerHTML = "<div style=\"font-weight:800\">Missed from this receipt:</div>" + missed.map(function(it, mi){
+    return "<div class=\"ss17-rec-row\"><span>" + ss17Esc(it.name) + "</span><span>$" + Number(it.price).toFixed(2) + "</span><button class=\"secondary\" type=\"button\" onclick=\"ss17AddMissed(" + idx + "," + mi + ")\">Add to inventory</button></div>";
+  }).join("");
+  window.ss17MissedList = missed;
+}
+window.ss17CheckMissed = ss17CheckMissed;
+function ss17AddMissed(rIdx, mi){
+  var missed = window.ss17MissedList || [];
+  var it = missed[mi]; if (!it) return;
+  if (typeof items !== "undefined" && typeof nextId !== "undefined" && typeof saveAll === "function") {
+    items.unshift({id: nextId++, name: it.name, category: "Other", location: "Pantry", quantity: 1, unit: "Each", expDate: "", notes: "From receipt", addedAt: new Date().toISOString()});
+    saveAll(); if (typeof render === "function") render();
+  }
+  ss17CheckMissed(rIdx);
+}
+window.ss17AddMissed = ss17AddMissed;
+function ss17ShowReceipt(){
+  ss17RenderHistory();
+  if (typeof openModal === "function") openModal("ss17ReceiptModal");
+}
+var ss17Btn = document.getElementById("ss17ReceiptBtn");
+if (ss17Btn) ss17Btn.onclick = function(){ if (typeof runFromMenu === "function") runFromMenu(ss17ShowReceipt); else ss17ShowReceipt(); };
+var ss17Close = document.getElementById("ss17CloseReceipt");
+if (ss17Close) ss17Close.onclick = function(){ closeModal("ss17ReceiptModal"); };
+var ss17File = document.getElementById("ss17ReceiptFile");
+if (ss17File) ss17File.onchange = function(){
+  var file = ss17File.files && ss17File.files[0];
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e){
+    ss17ImageDataUrl = e.target.result;
+    var img = document.getElementById("ss17ReceiptPreview");
+    if (img) { img.src = ss17ImageDataUrl; img.style.display = "block"; }
+    var btn = document.getElementById("ss17ReadBtn");
+    if (btn) btn.disabled = false;
+    var st = document.getElementById("ss17Status");
+    if (st) st.textContent = "Photo ready. Tap Read receipt.";
+  };
+  reader.readAsDataURL(file);
+};
+function ss17LoadTesseract(){
+  return new Promise(function(resolve, reject){
+    if (window.Tesseract) return resolve(window.Tesseract);
+    var s = document.createElement("script");
+    s.src = "https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js";
+    s.onload = function(){ resolve(window.Tesseract); };
+    s.onerror = reject;
+    document.head.appendChild(s);
+  });
+}
+var ss17Read = document.getElementById("ss17ReadBtn");
+if (ss17Read) ss17Read.onclick = function(){
+  var st = document.getElementById("ss17Status");
+  if (st) st.textContent = "Reading receipt on your phone, this can take a few seconds...";
+  ss17LoadTesseract().then(function(T){
+    return T.recognize(ss17ImageDataUrl, "eng");
+  }).then(function(result){
+    var text = result && result.data ? result.data.text : "";
+    ss17Parsed = ss17ParseReceiptText(text);
+    if (st) st.textContent = ss17Parsed.length ? ("Found " + ss17Parsed.length + " priced lines. Review them below.") : "No priced lines found. Try a clearer, straighter photo, or add prices by hand in Price Book.";
+    // try store/date from text: date pattern
+    var dateEl = document.getElementById("ss17ReceiptDate");
+    var dm = String(text || "").match(/(\d{4})-(\d{2})-(\d{2})|(\d{1,2})\/(\d{1,2})\/(\d{2,4})/);
+    if (dateEl && dm && !dateEl.value) {
+      if (dm[1]) dateEl.value = dm[1] + "-" + dm[2] + "-" + dm[3];
+    }
+    ss17RenderParsed();
+  }).catch(function(){
+    if (st) st.textContent = "Could not load the on-device reader. Check your connection and try again, or add prices by hand in Price Book.";
+  });
+};
+var ss17AddPrices = document.getElementById("ss17AddPricesBtn");
+if (ss17AddPrices) ss17AddPrices.onclick = function(){
+  var store = document.getElementById("ss17ReceiptStore").value.trim();
+  var date = document.getElementById("ss17ReceiptDate").value;
+  if (!store) return alert("Enter a store first, so the price book knows where this price came from.");
+  var checked = ss17CheckedParsed();
+  if (!checked.length) return alert("Check at least one line first.");
+  if (typeof ss15PriceBook === "undefined") return alert("Price Book is not loaded yet. Open Price Book once, then try again.");
+  checked.forEach(function(it){
+    ss15PriceBook.unshift({id: "pb" + Date.now() + "-" + Math.random().toString(16).slice(2), name: it.name, store: store, price: Number(it.price), date: date, size: ""});
+  });
+  if (typeof ss15SavePriceBook === "function") ss15SavePriceBook();
+  alert("Added " + checked.length + " prices to Price Book.");
+};
+var ss17AddInv = document.getElementById("ss17AddInventoryBtn");
+if (ss17AddInv) ss17AddInv.onclick = function(){
+  var checked = ss17CheckedParsed();
+  if (!checked.length) return alert("Check at least one line first.");
+  if (typeof items === "undefined" || typeof nextId === "undefined") return;
+  checked.forEach(function(it){
+    items.unshift({id: nextId++, name: it.name, category: "Other", location: "Pantry", quantity: 1, unit: "Each", expDate: "", notes: "From receipt", addedAt: new Date().toISOString()});
+  });
+  if (typeof saveAll === "function") saveAll();
+  if (typeof render === "function") render();
+  alert("Added " + checked.length + " items to inventory.");
+};
+var ss17SaveRec = document.getElementById("ss17SaveReceiptBtn");
+if (ss17SaveRec) ss17SaveRec.onclick = function(){
+  var store = document.getElementById("ss17ReceiptStore").value.trim();
+  var date = document.getElementById("ss17ReceiptDate").value;
+  var checked = ss17CheckedParsed();
+  if (!checked.length) return alert("Read a receipt and check at least one line first.");
+  var total = checked.reduce(function(sum, it){ return sum + Number(it.price); }, 0);
+  ss17Receipts.unshift({id: "rc" + Date.now(), store: store, date: date, total: total, items: checked.map(function(it){ return {name: it.name, price: Number(it.price)}; }), createdAt: new Date().toISOString()});
+  ss17SaveReceipts(); ss17RenderHistory();
+  alert("Saved receipt record: $" + total.toFixed(2) + ".");
+};
 </script>
 
 </body>
