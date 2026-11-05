@@ -347,6 +347,17 @@ input:focus, select:focus{ border-color:var(--ss-accent); box-shadow:0 0 0 3px r
 .ss11-bottomnav{ left:50%; transform:translateX(-50%); width:calc(100% - 24px); max-width:796px; bottom:calc(12px + env(safe-area-inset-bottom)); border:1px solid #E8E6E1; border-radius:28px; box-shadow:0 12px 30px rgba(80,80,80,.18); padding:10px 6px; }
 .ss11-bottomnav .ss11-scan{ box-shadow:0 6px 16px rgba(80,80,80,.20); }
 .modal-head{ background:var(--ss-accent-strong); }
+
+/* Calmer tabs (ss13): hide footer on main screen, simplify bottom tabs. */
+.footer{ display:none; }
+.ss11-bottomnav{ box-shadow:0 4px 16px rgba(80,80,80,.08); padding:12px 8px 10px; }
+.ss11-bottomnav button{ display:block; text-align:center; font-size:12px; font-weight:600; color:#9A9DA2; background:transparent; }
+.ss11-bottomnav button.active{ color:var(--ss-accent-strong); font-weight:700; }
+.ss11-bottomnav button::after{ content:""; display:block; width:4px; height:4px; border-radius:50%; background:transparent; margin:3px auto 0; }
+.ss11-bottomnav button.active::after{ background:var(--ss-accent-strong); }
+.ss11-bottomnav .ss11-scan{ background:transparent; color:#9A9DA2; width:auto; height:auto; border-radius:0; box-shadow:none; font-size:12px; font-weight:600; margin:0; }
+.ss11-bottomnav .ss11-scan.active{ color:var(--ss-accent-strong); font-weight:700; }
+.ss13-appinfo{ border-top:1px solid #E8E6E1; margin-top:14px; padding-top:12px; color:#9A9DA2; font-size:12px; line-height:1.6; }
 </style>
 </head>
 <body data-ss-theme="dusty">
@@ -487,6 +498,13 @@ input:focus, select:focus{ border-color:var(--ss-accent); box-shadow:0 0 0 3px r
     <button type="button" data-ss-theme="lavender">Lavender</button>
     <button type="button" data-ss-theme="sand">Warm sand</button>
   </div>
+</div>
+
+<div class="ss13-appinfo">
+  <div style="font-weight:800;color:#44484D">App info</div>
+  <div>Built-in backup: 2026-06-14T15:36:40.394Z</div>
+  <div>All changes saved locally</div>
+  <div>StockSmart v5.2.7</div>
 </div>
 <div class="menu-grid">
     <button class="menu-tile" id="scanMenuBtn" type="button"><span class="ico">📷</span><span><strong>Scan</strong><small>Add or check an item</small></span></button>
