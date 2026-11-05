@@ -375,6 +375,13 @@ body.ss14-inventory .table th:nth-child(3), body.ss14-inventory .table th:nth-ch
 body.ss14-inventory .table td.field-cell[data-label="Category"], body.ss14-inventory .table td.field-cell[data-label="Status"], body.ss14-inventory .table td.field-cell[data-label="Added"]{ display:none; }
 body.ss14-inventory .table td.item-cell .tag-badge{ display:none; }
 body.ss14-inventory .table tr{ box-shadow:0 2px 8px rgba(80,80,80,.04); }
+
+/* Price book (ss15). */
+.ss15-pb-group{ border:1px solid #E8E6E1; border-radius:14px; padding:12px; margin-bottom:10px; background:#fff; }
+.ss15-pb-group h4{ margin:0 0 6px; }
+.ss15-pb-cheapest{ font-weight:800; color:var(--ss-accent-strong); }
+.ss15-pb-entry{ display:flex; justify-content:space-between; gap:10px; padding:6px 0; border-top:1px solid #EDEBE7; font-size:14px; }
+.ss15-pb-entry:first-of-type{ border-top:none; }
 </style>
 </head>
 <body data-ss-theme="dusty">
@@ -503,6 +510,21 @@ body.ss14-inventory .table tr{ box-shadow:0 2px 8px rgba(80,80,80,.04); }
 
 <div class="modal" id="ss11AddChoiceModal"><div class="modal-box" style="max-width:420px"><div class="modal-head"><h3>Add item</h3><button class="secondary" id="ss11AddChoiceClose" type="button">Close</button></div><div class="modal-body"><p style="margin-top:0;color:#9A9DA2">How do you want to add it?</p><div style="display:grid;gap:10px"><button class="primary" id="ss11AddTextBtn" type="button">Add by typing</button><button class="secondary" id="ss11AddScanBtn" type="button">Scan a barcode</button></div></div></div></div>
 
+
+<div class="modal" id="ss15PriceBookModal"><div class="modal-box"><div class="modal-head"><h3>Price Book</h3><button class="secondary" id="ss15ClosePriceBook" type="button">Close</button></div><div class="modal-body">
+  <p style="margin-top:0;color:#9A9DA2">Add the price you actually paid, and the store. The app remembers the cheapest store for each item. Receipt scanning comes later and will fill this in for you.</p>
+  <div class="form-grid">
+    <label class="full">Item name<input id="ss15PbName" list="ss15PbNames" placeholder="e.g. Whole Milk"><datalist id="ss15PbNames"></datalist></label>
+    <label>Store<input id="ss15PbStore" list="ss15PbStores" placeholder="e.g. ShopRite"><datalist id="ss15PbStores"><option>ShopRite</option><option>Walmart</option><option>Target</option><option>Aldi</option><option>Sam&apos;s Club</option><option>Acme</option><option>Weis</option><option>Giant</option></datalist></label>
+    <label>Price<input id="ss15PbPrice" type="number" min="0" step="0.01" placeholder="0.00"></label>
+    <label>Date<input id="ss15PbDate" type="date"></label>
+    <label>Size / unit, optional<input id="ss15PbSize" placeholder="e.g. 1 gallon"></label>
+  </div>
+  <div class="modal-actions"><button class="primary" id="ss15PbAdd" type="button">Add price</button></div>
+  <div id="ss15PbHints" style="margin-top:16px"></div>
+  <div id="ss15PbList" style="margin-top:12px"></div>
+</div></div></div>
+
 <div class="modal" id="menuModal"><div class="modal-box menu-modal-box"><div class="modal-head"><h3>☰ StockSmart Menu</h3><button class="secondary" id="closeMenuModal">Close</button></div><div class="modal-body">
   
 <div class="ss11-theme-picker">
@@ -535,6 +557,7 @@ body.ss14-inventory .table tr{ box-shadow:0 2px 8px rgba(80,80,80,.04); }
     <button class="menu-tile" id="ss6RecipesBtn" type="button"><span class="ico">📖</span><span><strong>Recipes</strong><small>Add, edit, favorite recipes</small></span></button>
     <button class="menu-tile" id="ss6PlannerBtn" type="button"><span class="ico">📅</span><span><strong>Meal Planner</strong><small>Seven-day plan</small></span></button>
     <button class="menu-tile" id="ss6SettingsBtn" type="button"><span class="ico">⚙️</span><span><strong>Settings</strong><small>Expiring soon, batches, trash</small></span></button>
+    <button class="menu-tile" id="ss15PriceBookBtn" type="button"><span class="ico">💲</span><span><strong>Price Book</strong><small>Cheapest store by item</small></span></button>
     <button class="menu-tile" id="dealsMenuBtn" type="button"><span class="ico">📰</span><span><strong>Deals</strong><small>Weekly circulars</small></span></button>
     <button class="menu-tile" id="familySyncMenuBtn" type="button"><span class="ico">👥</span><span><strong>Family Sync</strong><small>Manual backup/restore</small></span></button>
     <button class="menu-tile" id="installHelpMenuBtn" type="button"><span class="ico">📱</span><span><strong>Install Help</strong><small>Phone or desktop app</small></span></button>
@@ -899,7 +922,7 @@ function toggleShopping(id) { shoppingList=shoppingList.map(i=>String(i.id)===St
 function clearShoppingForm() { shopName.value=""; shopCategory.value="Other"; shopLocation.value="Pantry"; shopQty.value=1; setDateValue(shopExp,""); shopNotes.value=""; }
 function openShoppingAdd() { clearShoppingForm(); openModal("shoppingModal"); }
 function saveShoppingItem() { const name=shopName.value.trim(); if(!name) return alert("Please enter an item name."); shoppingList.unshift({id:"s"+Date.now()+"-manual",name,category:shopCategory.value||"Other",location:shopLocation.value||"",quantity:Number(shopQty.value||1),expDate:shopExp.value||"",notes:shopNotes.value.trim(),addedAt:new Date().toISOString(),completed:false}); closeModal("shoppingModal"); showShopping(); }
-function backup() { const data={formatVersion:"stocksmart-v6",appVersion:"6.0.0",createdAt:new Date().toISOString(),items,nextId,shoppingList,mealFavorites:mealFavorites(),history:window.ss6History||[],sessions:window.ss6Sessions||[],recipes:window.ss6Recipes||[],planner:window.ss6Planner||{},settings:window.ss6Settings||{expiringDays:14},corrections:window.ss6Corrections||{},trash:window.ss6Trash||[]}; const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"}); const url=URL.createObjectURL(blob); const a=document.createElement("a"); a.href=url; a.download="stocksmart-backup.json"; a.click(); URL.revokeObjectURL(url); }
+function backup() { const data={formatVersion:"stocksmart-v6",appVersion:"6.0.0",createdAt:new Date().toISOString(),items,nextId,shoppingList,mealFavorites:mealFavorites(),history:window.ss6History||[],sessions:window.ss6Sessions||[],recipes:window.ss6Recipes||[],planner:window.ss6Planner||{},settings:window.ss6Settings||{expiringDays:14},corrections:window.ss6Corrections||{},trash:window.ss6Trash||[],pricebook:window.ss15PriceBook||[]}; const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"}); const url=URL.createObjectURL(blob); const a=document.createElement("a"); a.href=url; a.download="stocksmart-backup.json"; a.click(); URL.revokeObjectURL(url); }
 function restoreFile(file) { if(!file)return; const reader=new FileReader(); reader.onload=e=>{try{const data=JSON.parse(e.target.result); const imported=Array.isArray(data)?data:data.items; if(!Array.isArray(imported))throw new Error("No inventory array in backup."); if(!confirm("Replace your current inventory and shopping list with this backup? Choose Cancel to keep your current data."))return; items=normalizeItems(imported); shoppingList=Array.isArray(data.shoppingList)?data.shoppingList:[]; nextId=data.nextId||Math.max(0,...items.map(i=>Number(i.id)||0))+1; if(data.formatVersion==="stocksmart-v6" && window.ss6ApplyBackup){ window.ss6ApplyBackup(data); } render(); alert("Backup restored.");}catch(err){alert("Could not read that backup file. " + (err && err.message ? err.message : ""));}}; reader.readAsText(file); }
 function recover() { if(!confirm("Reload the current backup inventory built into this app?"))return; items=normalizeItems(DEFAULT_ITEMS); shoppingList=DEFAULT_SHOPPING||[]; nextId=Math.max(0,...items.map(i=>Number(i.id)||0))+1; showInventory(); }
 function useFirst() { showInventory("expiring"); }
@@ -1042,6 +1065,7 @@ function ss6ApplyBackup(data){
   if (data.settings && typeof data.settings === "object") { ss6Settings = data.settings; ss6ExpiringDays = Number(ss6Settings.expiringDays) || 14; }
   if (data.corrections && typeof data.corrections === "object") ss6Corrections = data.corrections;
   if (Array.isArray(data.trash)) ss6Trash = data.trash;
+  if (Array.isArray(data.pricebook) && window.ss15SetPriceBook) window.ss15SetPriceBook(data.pricebook);
   ss6ActiveSessionId = null;
   ss6SaveAll();
 }
@@ -1701,5 +1725,87 @@ ss10ApplyHomeMode(); ss10RenderUseTonight();
   }
 })();
 </script>
+
+<script>
+/* Price book (ss15). Receipt scan later will add to this same book. */
+var ss15PriceBook = [];
+try { ss15PriceBook = JSON.parse(localStorage.getItem("stocksmart_v11_pricebook") || "null") || []; } catch(e) { ss15PriceBook = []; }
+if (!Array.isArray(ss15PriceBook)) ss15PriceBook = [];
+window.ss15PriceBook = ss15PriceBook;
+function ss15SavePriceBook(){ try{ localStorage.setItem("stocksmart_v11_pricebook", JSON.stringify(ss15PriceBook)); }catch(e){} window.ss15PriceBook = ss15PriceBook; }
+function ss15SetPriceBook(arr){ ss15PriceBook = Array.isArray(arr) ? arr : []; ss15SavePriceBook(); ss15RenderPriceBook(); }
+window.ss15SetPriceBook = ss15SetPriceBook;
+function ss15NormName(s){ return String(s || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim(); }
+function ss15Esc(s){ return String(s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;"); }
+function ss15DeletePrice(id){
+  ss15PriceBook = ss15PriceBook.filter(function(e){ return String(e.id) !== String(id); });
+  ss15SavePriceBook(); ss15RenderPriceBook();
+}
+window.ss15DeletePrice = ss15DeletePrice;
+function ss15RenderPriceBook(){
+  var list = document.getElementById("ss15PbList");
+  var hints = document.getElementById("ss15PbHints");
+  if (!list) return;
+  if (hints) {
+    var shop = (typeof shoppingList !== "undefined") ? shoppingList : [];
+    var hintLines = [];
+    shop.forEach(function(s){
+      var matches = ss15PriceBook.filter(function(e){ return ss15NormName(e.name) === ss15NormName(s.name); }).sort(function(a,b){ return Number(a.price) - Number(b.price); });
+      if (matches.length) hintLines.push("<div>" + ss15Esc(s.name) + ": cheapest $" + Number(matches[0].price).toFixed(2) + " at " + ss15Esc(matches[0].store) + "</div>");
+    });
+    hints.innerHTML = hintLines.length ? "<div style=\"font-weight:800\">On your shopping list, cheapest known:</div>" + hintLines.join("") : "<div style=\"color:#9A9DA2\">No shopping list items have a price yet. Add one above after a trip.</div>";
+  }
+  if (!ss15PriceBook.length) { list.innerHTML = "<p style=\"color:#9A9DA2\">No prices yet. Add your first price above.</p>"; return; }
+  var groups = {};
+  ss15PriceBook.forEach(function(e){
+    var k = ss15NormName(e.name) || "other";
+    if (!groups[k]) groups[k] = {name: e.name, entries: []};
+    groups[k].entries.push(e);
+  });
+  var keys = Object.keys(groups).sort(function(a,b){ return groups[a].name.localeCompare(groups[b].name); });
+  list.innerHTML = keys.map(function(k){
+    var g = groups[k];
+    var sorted = g.entries.slice().sort(function(a,b){ return Number(a.price) - Number(b.price); });
+    var cheap = sorted[0];
+    var rows = sorted.map(function(e){
+      return "<div class=\"ss15-pb-entry\"><span>" + ss15Esc(e.store) + (e.size ? " · " + ss15Esc(e.size) : "") + (e.date ? " · " + ss15Esc(e.date) : "") + "</span><span>$" + Number(e.price).toFixed(2) + " <button class=\"secondary\" type=\"button\" style=\"padding:4px 8px;margin-left:6px\" onclick=\"ss15DeletePrice('" + String(e.id) + "')\">Delete</button></span></div>";
+    }).join("");
+    return "<div class=\"ss15-pb-group\"><h4>" + ss15Esc(g.name) + "</h4><div class=\"ss15-pb-cheapest\">Cheapest: $" + Number(cheap.price).toFixed(2) + " at " + ss15Esc(cheap.store) + "</div>" + rows + "</div>";
+  }).join("");
+}
+function ss15ShowPriceBook(){
+  var dl = document.getElementById("ss15PbNames");
+  if (dl && typeof items !== "undefined") {
+    var names = [];
+    items.forEach(function(i){ if (i.name && names.indexOf(i.name) < 0) names.push(i.name); });
+    dl.innerHTML = names.sort().map(function(n){ return "<option>" + ss15Esc(n) + "</option>"; }).join("");
+  }
+  var dateEl = document.getElementById("ss15PbDate");
+  if (dateEl && !dateEl.value) { try{ dateEl.value = new Date().toISOString().slice(0,10); }catch(e){} }
+  ss15RenderPriceBook();
+  if (typeof openModal === "function") openModal("ss15PriceBookModal");
+}
+var ss15Btn = document.getElementById("ss15PriceBookBtn");
+if (ss15Btn) ss15Btn.onclick = function(){ if (typeof runFromMenu === "function") runFromMenu(ss15ShowPriceBook); else ss15ShowPriceBook(); };
+var ss15Close = document.getElementById("ss15ClosePriceBook");
+if (ss15Close) ss15Close.onclick = function(){ closeModal("ss15PriceBookModal"); };
+var ss15Add = document.getElementById("ss15PbAdd");
+if (ss15Add) ss15Add.onclick = function(){
+  var name = document.getElementById("ss15PbName").value.trim();
+  var store = document.getElementById("ss15PbStore").value.trim();
+  var price = Number(document.getElementById("ss15PbPrice").value);
+  var date = document.getElementById("ss15PbDate").value;
+  var size = document.getElementById("ss15PbSize").value.trim();
+  if (!name) return alert("Enter an item name.");
+  if (!store) return alert("Enter a store.");
+  if (!price || price <= 0) return alert("Enter a price above 0.");
+  ss15PriceBook.unshift({id: "pb" + Date.now(), name: name, store: store, price: price, date: date, size: size});
+  ss15SavePriceBook();
+  document.getElementById("ss15PbPrice").value = "";
+  document.getElementById("ss15PbSize").value = "";
+  ss15RenderPriceBook();
+};
+</script>
+
 </body>
 </html>
