@@ -1422,7 +1422,7 @@ function ss6ShowPlanner(){
     var names = soon.slice(0, 5).map(function(i){ return i.name; }).join(", ");
     suggestion = '<div class="v6-card"><strong>Use soon:</strong> ' + esc(names) + '. Pick a recipe that uses one of these first.</div>';
   }
-  smartModalBody.innerHTML = suggestion + ss6Days.map(function(day){
+  smartModalBody.innerHTML = suggestion + '<div class="v6-row" style="margin-bottom:10px"><button class="primary" onclick="ss18AutoPlanWeek()">Plan my week</button><button class="secondary" onclick="ss18AddWeekToShopping()">Add week missing to shopping</button></div>' + ss6Days.map(function(day){
     var rid = ss6Planner[day];
     var r = rid ? ss6RecipeById(rid) : null;
     return '<div class="v6-card"><strong>' + day + '</strong><div>' + (r ? esc(r.title) : '<span style="color:var(--muted)">No meal planned</span>') + '</div>'
@@ -2163,6 +2163,78 @@ if (ss17SaveRec) ss17SaveRec.onclick = function(){
   ss17SaveReceipts(); ss17RenderHistory();
   alert("Saved receipt record: $" + total.toFixed(2) + ".");
 };
+</script>
+
+
+<script>
+/* Auto-plan week and week shopping list (ss18). */
+function ss18Esc(s){ return String(s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;"); }
+function ss18AutoPlanWeek(){
+  if (typeof ss6Recipes === "undefined" || !ss6Recipes.length) { alert("Add a recipe first, then Plan my week can fill the week."); return; }
+  var hasPlan = false;
+  if (typeof ss6Planner !== "undefined") hasPlan = Object.keys(ss6Planner).some(function(d){ return ss6Planner[d]; });
+  if (hasPlan && !confirm("Replace your current week plan with an auto plan?")) return;
+  var scored = ss6Recipes.map(function(r){
+    var m = (typeof ss6RecipeMatch === "function") ? ss6RecipeMatch(r) : {available: [], missing: [], useSoon: []};
+    var score = m.useSoon.length * 10 + m.available.length * 2 - m.missing.length * 2 + (r.favorite ? 3 : 0);
+    if (!m.missing.length) score += 5;
+    return {recipe: r, score: score, match: m};
+  }).sort(function(a,b){ return b.score - a.score || String(a.recipe.title).localeCompare(String(b.recipe.title)); });
+  var days = (typeof ss6Days !== "undefined") ? ss6Days : ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
+  var used = {};
+  var order = scored.map(function(s){ return s.recipe; });
+  days.forEach(function(day, idx){
+    var pick = null;
+    for (var i = 0; i < order.length; i++) { if (!used[order[i].id]) { pick = order[i]; break; } }
+    if (!pick) pick = order[idx % order.length];
+    ss6Planner[day] = Number(pick.id);
+    used[pick.id] = true;
+  });
+  if (typeof ss6SaveAll === "function") ss6SaveAll();
+  if (typeof ss6ShowPlanner === "function") ss6ShowPlanner();
+}
+window.ss18AutoPlanWeek = ss18AutoPlanWeek;
+function ss18AddWeekToShopping(){
+  if (typeof ss6Planner === "undefined" || !Object.keys(ss6Planner).length) { alert("Plan a week first, then add its missing ingredients."); return; }
+  var days = (typeof ss6Days !== "undefined") ? ss6Days : ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
+  var need = {};
+  var order = [];
+  days.forEach(function(day){
+    var rid = ss6Planner[day];
+    var r = (typeof ss6RecipeById === "function") ? ss6RecipeById(rid) : null;
+    if (!r) return;
+    (r.ingredients || []).forEach(function(ing){
+      var k = (typeof ss6Norm === "function") ? ss6Norm(ing.name) : String(ing.name).toLowerCase();
+      if (!need[k]) { need[k] = {name: ing.name, qty: 0, unit: ing.unit || "Each", days: []}; order.push(k); }
+      need[k].qty += Number(ing.qty || 0);
+      if (need[k].days.indexOf(day) < 0) need[k].days.push(day);
+    });
+  });
+  var added = 0, increased = 0;
+  order.forEach(function(k){
+    var n = need[k];
+    var found = (typeof ss6InventoryForIngredient === "function") ? ss6InventoryForIngredient(n.name) : [];
+    var have = found.reduce(function(a, i){ return a + Number(i.quantity || 0); }, 0);
+    var missingQty = n.qty - have;
+    if (missingQty <= 0) return;
+    var existing = shoppingList.find(function(s){ return !s.completed && ((typeof ss6Norm === "function") ? ss6Norm(s.name) : String(s.name).toLowerCase()) === k; });
+    if (existing) {
+      existing.quantity = Number(existing.quantity || 0) + missingQty;
+      existing.notes = (existing.notes ? existing.notes + "; " : "") + "Week plan: " + n.days.join(", ");
+      increased++;
+    } else {
+      shoppingList.unshift({id: "s" + Date.now() + "-week-" + Math.random().toString(16).slice(2), name: n.name, category: "Other", location: "", quantity: missingQty, expDate: "", notes: "Week plan: " + n.days.join(", "), addedAt: new Date().toISOString(), completed: false});
+      added++;
+    }
+  });
+  if (typeof saveAll === "function") saveAll();
+  if (typeof render === "function") render();
+  if (!added && !increased) { alert("Nothing missing for this week plan. You already have everything on hand."); return; }
+  alert("Added " + added + " new item(s) and increased " + increased + " item(s) already on your shopping list for the week plan.");
+  if (typeof closeModal === "function") closeModal("smartModal");
+  if (typeof showShopping === "function") showShopping();
+}
+window.ss18AddWeekToShopping = ss18AddWeekToShopping;
 </script>
 
 </body>
